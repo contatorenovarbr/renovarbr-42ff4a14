@@ -80,3 +80,8 @@
 @utility placeholder-stripes {
   background-image: repeating-linear-gradient(135deg, oklch(1 0 0 / 4%) 0 12px, transparent 12px 24px);
 }
+
+@keyframes indeterminate { 0% { transform: translateX(-100%); } 100% { transform: translateX(300%); } }
+@keyframes tick { 0% { opacity: .4; transform: translateY(-4px); } 100% { opacity: 1; transform: none; } }
+@utility animate-indeterminate { animation: indeterminate 2.4s ease-in-out infinite; }
+@utility animate-tick { animation: tick .35s ease-out; }
