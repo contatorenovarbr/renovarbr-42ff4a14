@@ -28,7 +28,7 @@ export function ObraAtual() {
 
         <Reveal delay={100}>
           <article className="mt-12 overflow-hidden rounded-xl border border-primary/30 bg-card shadow-2xl transition duration-500 hover:border-primary/60">
-            <div className="grid gap-3 p-3 md:grid-cols-2">
+            <div className="grid gap-3 p-3 md:grid-cols-3">
               {photos
                 ? photos.map((p, i) => (
                     <figure key={i} className="group overflow-hidden rounded-lg">
