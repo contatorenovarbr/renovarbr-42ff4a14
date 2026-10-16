@@ -4,8 +4,8 @@ export const obraAtual = {
   titulo: "Obra atual",
   status: "Acabamento e finalização",
   etapa: "Etapa atual: acabamento e finalização",
-  // Endereço ainda não informado pelo cliente. Preencha quando receber (ex.: "Rua X, 123 — Itapema/SC").
-  endereco: "" as string,
+  // Endereço informado pelo cliente.
+  endereco: "Rua 267, nº 106 — Edifício Dona Yolanda, Meia Praia, Itapema/SC",
   // Prazo informado pelo cliente (horário de Santa Catarina).
   prazo: "2026-10-20T18:00:00-03:00",
   prazoLabel: "20/10/2026",
