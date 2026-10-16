@@ -3,6 +3,7 @@ import { ArrowRight, MessageCircle, PaintRoller, Layers, Brush, Building2, Wrenc
 import hero from "@/assets/hero.jpg";
 import detail from "@/assets/detail.jpg";
 import { Logo } from "@/components/Logo";
+import { ObraAtual } from "@/components/ObraAtual";
 
 const WA = "https://wa.me/5547997953323?text=Ol%C3%A1%2C%20quero%20solicitar%20um%20or%C3%A7amento";
 
@@ -81,7 +82,7 @@ function Index() {
           </a>
           <nav aria-label="Principal" className="hidden gap-8 text-sm text-muted-foreground md:flex">
             <a className="hover:text-foreground" href="#servicos">Serviços</a>
-            <a className="hover:text-foreground" href="#portfolio">Portfólio</a>
+            <a className="hover:text-foreground" href="#obra">Obra atual</a>
             <a className="hover:text-foreground" href="#processo">Como trabalhamos</a>
             <a className="hover:text-foreground" href="#areas">Áreas</a>
           </nav>
@@ -142,21 +143,7 @@ function Index() {
           </ul>
         </section>
 
-        {/* PORTFOLIO */}
-        <section id="portfolio" className="bg-surface py-24 md:py-32">
-          <div className="mx-auto max-w-7xl px-5">
-            <p className="text-sm font-bold uppercase tracking-widest text-primary">Portfólio</p>
-            <h2 className="mt-3 text-4xl font-black uppercase md:text-6xl">Nossas obras</h2>
-            <p className="mt-4 max-w-xl text-muted-foreground">Espaços reservados para as fotos reais dos projetos executados.</p>
-            <div className="mt-14 grid auto-rows-[200px] gap-4 md:grid-cols-3">
-              <PhotoSlot tall label="Obra 1 — Fachada" />
-              <PhotoSlot label="Obra 2 — Interno residencial" />
-              <PhotoSlot label="Obra 3 — Textura" />
-              <PhotoSlot label="Obra 4 — Comercial" />
-              <PhotoSlot label="Obra 5 — Condomínio" />
-            </div>
-          </div>
-        </section>
+        <ObraAtual />
 
         {/* PROCESS */}
         <section id="processo" className="mx-auto max-w-7xl px-5 py-24 md:py-32">
