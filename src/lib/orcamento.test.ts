@@ -14,6 +14,6 @@ describe("orçamento", () => {
     expect(calcular({ ...base, lucroPct: 0, descontoValor: 100 }).precoFinal).toBe(900);
   });
   it("login pelo WhatsApp usa só os números", () => {
-    expect(whatsappToEmail("(47) 99795-3323")).toBe("4799795332 3@admin.renovarbr.app".replace(" ", ""));
+    expect(whatsappToEmail("+55 (47) 99795-3323")).toBe("5547997953323@admin.renovarbr.app");
   });
 });
