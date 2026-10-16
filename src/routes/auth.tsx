@@ -37,8 +37,8 @@ function AuthPage() {
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     const email = whatsappToEmail(phone);
-    if (email.length < 20) return toast.error("Informe o número de WhatsApp completo, com DDD.");
-    if (pass.length < 8) return toast.error("A senha precisa ter pelo menos 8 caracteres.");
+    if (email.length < 20) { toast.error("Informe o número de WhatsApp completo, com DDD."); return; }
+    if (pass.length < 8) { toast.error("A senha precisa ter pelo menos 8 caracteres."); return; }
     setBusy(true);
     try {
       if (primeiro) {

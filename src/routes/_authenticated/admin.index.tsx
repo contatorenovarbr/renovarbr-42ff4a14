@@ -21,13 +21,13 @@ function AdminHome() {
 
   async function novo() {
     const { data, error } = await supabase.from("empreendimentos").insert({}).select("id").single();
-    if (error) return toast.error("Não foi possível criar.");
+    if (error) { toast.error("Não foi possível criar."); return; }
     navigate({ to: "/admin/$id", params: { id: data.id } });
   }
 
   async function togglePublicado(id: string, publicado: boolean) {
     const { error } = await supabase.from("empreendimentos").update({ publicado: !publicado }).eq("id", id);
-    if (error) return toast.error("Erro ao atualizar.");
+    if (error) { toast.error("Erro ao atualizar."); return; }
     toast.success(!publicado ? "Agora aparece no site." : "Removido do site.");
     qc.invalidateQueries({ queryKey: ["empreendimentos"] });
   }
