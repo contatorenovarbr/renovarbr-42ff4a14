@@ -85,3 +85,9 @@
 @keyframes tick { 0% { opacity: .4; transform: translateY(-4px); } 100% { opacity: 1; transform: none; } }
 @utility animate-indeterminate { animation: indeterminate 2.4s ease-in-out infinite; }
 @utility animate-tick { animation: tick .35s ease-out; }
+
+@media print {
+  @page { size: A4; margin: 14mm; }
+  html, body { background: #fff !important; }
+  .quote-sheet { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+}

@@ -1,4 +1,5 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { ObrasPublicadas } from "@/components/ObrasPublicadas";
 import { ArrowRight, MessageCircle, PaintRoller, Layers, Brush, Building2, Wrench, Store, MapPin, ImagePlus, Check } from "lucide-react";
 import hero from "@/assets/hero.jpg";
 import { Logo } from "@/components/Logo";
@@ -77,9 +78,9 @@ function Index() {
 
       <header className="fixed inset-x-0 top-0 z-40 border-b border-border bg-background/80 backdrop-blur">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-5 py-4">
-          <a href="#topo" aria-label="Renovar BR — início">
+          <Link to="/admin" aria-label="Renovar BR">
             <Logo />
-          </a>
+          </Link>
           <nav aria-label="Principal" className="hidden gap-8 text-sm text-muted-foreground md:flex">
             <a className="hover:text-foreground" href="#obra">Obra atual</a>
             <a className="hover:text-foreground" href="#servicos">Serviços</a>
@@ -113,6 +114,7 @@ function Index() {
         </section>
 
         <ObraAtual />
+        <ObrasPublicadas />
 
 
         {/* AUDIENCE */}
