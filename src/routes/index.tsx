@@ -109,9 +109,11 @@ function Index() {
             <div className="mt-10 flex flex-col gap-3 sm:flex-row">
               <QuoteButton /><WhatsButton />
             </div>
-            <p className="mt-12 text-xs uppercase tracking-widest text-muted-foreground/70">Imagem ilustrativa temporária — substituir por foto real</p>
           </div>
         </section>
+
+        <ObraAtual />
+
 
         {/* AUDIENCE */}
         <section aria-label="Para quem atendemos" className="border-y border-border bg-surface">
