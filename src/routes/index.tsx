@@ -81,8 +81,8 @@ function Index() {
             <Logo />
           </a>
           <nav aria-label="Principal" className="hidden gap-8 text-sm text-muted-foreground md:flex">
-            <a className="hover:text-foreground" href="#servicos">Serviços</a>
             <a className="hover:text-foreground" href="#obra">Obra atual</a>
+            <a className="hover:text-foreground" href="#servicos">Serviços</a>
             <a className="hover:text-foreground" href="#processo">Como trabalhamos</a>
             <a className="hover:text-foreground" href="#areas">Áreas</a>
           </nav>
@@ -93,7 +93,7 @@ function Index() {
       <main id="conteudo">
         {/* HERO */}
         <section id="topo" className="relative isolate overflow-hidden pt-28 pb-20 md:pt-40 md:pb-32">
-          <img src={hero} alt="Imagem ilustrativa: fachada de edifício em pintura com andaimes" width={1600} height={1008}
+          <img src={hero} alt="Fachada de edifício em pintura com andaimes" width={1600} height={1008}
             className="absolute inset-0 -z-10 h-full w-full object-cover opacity-50" />
           <div className="absolute inset-0 -z-10 bg-gradient-to-r from-background via-background/85 to-background/30" aria-hidden />
           <div className="mx-auto max-w-7xl px-5">
@@ -109,9 +109,11 @@ function Index() {
             <div className="mt-10 flex flex-col gap-3 sm:flex-row">
               <QuoteButton /><WhatsButton />
             </div>
-            <p className="mt-12 text-xs uppercase tracking-widest text-muted-foreground/70">Imagem ilustrativa temporária — substituir por foto real</p>
           </div>
         </section>
+
+        <ObraAtual />
+
 
         {/* AUDIENCE */}
         <section aria-label="Para quem atendemos" className="border-y border-border bg-surface">
@@ -142,8 +144,6 @@ function Index() {
             ))}
           </ul>
         </section>
-
-        <ObraAtual />
 
         {/* PROCESS */}
         <section id="processo" className="mx-auto max-w-7xl px-5 py-24 md:py-32">
