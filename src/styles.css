@@ -34,6 +34,7 @@
   --color-paper: var(--paper);
   --color-paper-foreground: var(--paper-foreground);
   --color-whatsapp: var(--whatsapp);
+  --color-brand-orange: var(--brand-orange);
 }
 
 :root {
@@ -46,6 +47,7 @@
   --popover: oklch(0.21 0.005 260);
   --popover-foreground: oklch(0.97 0.003 90);
   --primary: oklch(0.86 0.17 92);
+  --brand-orange: oklch(0.72 0.18 50);
   --primary-foreground: oklch(0.16 0.004 260);
   --secondary: oklch(0.26 0.005 260);
   --secondary-foreground: oklch(0.97 0.003 90);
