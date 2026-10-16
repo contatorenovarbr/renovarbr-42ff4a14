@@ -8,9 +8,9 @@ const WA = "https://wa.me/5547997953323?text=Ol%C3%A1%2C%20quero%20solicitar%20u
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Pinturas Belas Artes | Pintura e Acabamento em SC" },
+      { title: "Renovar BR | Pintura e Acabamento em SC" },
       { name: "description", content: "Pintura interna e externa, fachadas, texturas e manutenção predial em Porto Belo, Itapema, Balneário Camboriú e Camboriú. Solicite seu orçamento." },
-      { property: "og:title", content: "Pinturas Belas Artes | Pintura e Acabamento em SC" },
+      { property: "og:title", content: "Renovar BR | Pintura e Acabamento em SC" },
       { property: "og:description", content: "Pintura, reforma e acabamento para construtoras, condomínios, residências e comércios no litoral de SC." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
@@ -77,7 +77,7 @@ function Index() {
         <div className="mx-auto flex max-w-7xl items-center justify-between px-5 py-4">
           <a href="#topo" className="flex items-center gap-2 font-display text-lg font-black uppercase tracking-tight">
             <span className="h-6 w-2 rounded-sm bg-primary" aria-hidden />
-            Pinturas <span className="text-primary">Belas Artes</span>
+            Renovar <span className="text-primary">BR</span>
           </a>
           <nav aria-label="Principal" className="hidden gap-8 text-sm text-muted-foreground md:flex">
             <a className="hover:text-foreground" href="#servicos">Serviços</a>
@@ -220,14 +220,14 @@ function Index() {
       <footer className="border-t border-border">
         <div className="mx-auto flex max-w-7xl flex-col gap-6 px-5 py-10 md:flex-row md:items-center md:justify-between">
           <div>
-            <p className="font-display text-lg font-black uppercase">Pinturas <span className="text-primary">Belas Artes</span></p>
+            <p className="font-display text-lg font-black uppercase">Renovar <span className="text-primary">BR</span></p>
             <p className="mt-1 text-sm text-muted-foreground">Pintura, reforma e acabamento · Porto Belo · Itapema · Balneário Camboriú · Camboriú — SC</p>
           </div>
           <a href={WA} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 font-semibold text-accent hover:underline">
             <MessageCircle className="h-5 w-5" aria-hidden /> (47) 99795-3323
           </a>
         </div>
-        <p className="pb-8 text-center text-xs text-muted-foreground">© {new Date().getFullYear()} Pinturas Belas Artes</p>
+        <p className="pb-8 text-center text-xs text-muted-foreground">© {new Date().getFullYear()} Renovar BR</p>
       </footer>
 
       <a href={WA} target="_blank" rel="noopener noreferrer" aria-label="Conversar no WhatsApp (abre em nova aba)"
