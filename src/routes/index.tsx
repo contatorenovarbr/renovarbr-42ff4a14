@@ -1,8 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { ArrowRight, MessageCircle, PaintRoller, Layers, Brush, Building2, Wrench, Store, MapPin, ImagePlus, Check } from "lucide-react";
 import hero from "@/assets/hero.jpg";
-import detail from "@/assets/detail.jpg";
 import { Logo } from "@/components/Logo";
+import responsavel from "@/assets/responsavel.jpg.asset.json";
 import { ObraAtual } from "@/components/ObraAtual";
 
 const WA = "https://wa.me/5547997953323?text=Ol%C3%A1%2C%20quero%20solicitar%20um%20or%C3%A7amento";
@@ -152,8 +152,8 @@ function Index() {
               <p className="text-sm font-bold uppercase tracking-widest text-primary">Processo</p>
               <h2 className="mt-3 text-4xl font-black uppercase md:text-6xl">Como trabalhamos</h2>
               <figure className="mt-10">
-                <img src={detail} alt="Imagem ilustrativa: rolo aplicando tinta branca em parede" loading="lazy" width={1200} height={912} className="rounded-lg" />
-                <figcaption className="mt-2 text-xs uppercase tracking-widest text-muted-foreground/70">Imagem ilustrativa temporária</figcaption>
+                <img src={responsavel.url} alt="Responsável da Renovar BR em obra, com camiseta da empresa" loading="lazy" width={959} height={1280} className="aspect-[4/5] w-full rounded-lg object-cover object-top" />
+                <figcaption className="mt-3 text-xs font-bold uppercase tracking-widest text-primary">Responsável Renovar BR · acompanha cada obra</figcaption>
               </figure>
             </div>
             <ol className="space-y-2">
