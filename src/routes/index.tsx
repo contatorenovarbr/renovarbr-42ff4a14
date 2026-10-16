@@ -1,7 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { ArrowRight, MessageCircle, PaintRoller, Layers, Brush, Building2, Wrench, Store, MapPin, ImagePlus, Check } from "lucide-react";
 import hero from "@/assets/hero.jpg";
-import detail from "@/assets/detail.jpg";
 import { Logo } from "@/components/Logo";
 import responsavel from "@/assets/responsavel.jpg.asset.json";
 import { ObraAtual } from "@/components/ObraAtual";
