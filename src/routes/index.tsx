@@ -145,8 +145,6 @@ function Index() {
           </ul>
         </section>
 
-        <ObraAtual />
-
         {/* PROCESS */}
         <section id="processo" className="mx-auto max-w-7xl px-5 py-24 md:py-32">
           <div className="grid gap-16 lg:grid-cols-2">
