@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { ArrowRight, MessageCircle, PaintRoller, Layers, Brush, Building2, Wrench, Store, MapPin, ImagePlus, Check } from "lucide-react";
 import hero from "@/assets/hero.jpg";
 import detail from "@/assets/detail.jpg";
+import { Logo } from "@/components/Logo";
 
 const WA = "https://wa.me/5547997953323?text=Ol%C3%A1%2C%20quero%20solicitar%20um%20or%C3%A7amento";
 
@@ -75,9 +76,8 @@ function Index() {
 
       <header className="fixed inset-x-0 top-0 z-40 border-b border-border bg-background/80 backdrop-blur">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-5 py-4">
-          <a href="#topo" className="flex items-center gap-2 font-display text-lg font-black uppercase tracking-tight">
-            <span className="h-6 w-2 rounded-sm bg-primary" aria-hidden />
-            Renovar <span className="text-primary">BR</span>
+          <a href="#topo" aria-label="Renovar BR — início">
+            <Logo />
           </a>
           <nav aria-label="Principal" className="hidden gap-8 text-sm text-muted-foreground md:flex">
             <a className="hover:text-foreground" href="#servicos">Serviços</a>
@@ -220,7 +220,7 @@ function Index() {
       <footer className="border-t border-border">
         <div className="mx-auto flex max-w-7xl flex-col gap-6 px-5 py-10 md:flex-row md:items-center md:justify-between">
           <div>
-            <p className="font-display text-lg font-black uppercase">Renovar <span className="text-primary">BR</span></p>
+            <Logo />
             <p className="mt-1 text-sm text-muted-foreground">Pintura, reforma e acabamento · Porto Belo · Itapema · Balneário Camboriú · Camboriú — SC</p>
           </div>
           <a href={WA} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 font-semibold text-accent hover:underline">
