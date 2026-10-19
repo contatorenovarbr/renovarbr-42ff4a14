@@ -21,7 +21,7 @@ export const Route = createFileRoute("/_authenticated/admin/$id")({ head: () => 
   { name: "robots", content: "noindex, nofollow" },
 ] }), component: Ficha });
 
-type Geral = { titulo: string; cidade: string; endereco: string; status: string; etapa: string; prazo: string; publicado: boolean; fotos: string[]; ficha_publica: string; atualizacoes: string };
+type Geral = { titulo: string; cidade: string; endereco: string; status: string; etapa: string; prazo: string; publicado: boolean; fotos: string[]; foto_capa: string | null; ficha_publica: string; atualizacoes: string };
 
 const CIDADES = [...cidadesAtendidas, "Outra"];
 const STATUS = ["Orçamento", "Aguardando aprovação", "Aprovado", "Em andamento", "Acabamento e finalização", "Concluída"];
@@ -82,7 +82,7 @@ function Ficha() {
 
   useEffect(() => {
     if (!data) return;
-    setG({ titulo: data.titulo, cidade: data.cidade, endereco: data.endereco, status: data.status, etapa: data.etapa, prazo: data.prazo ?? "", publicado: data.publicado, fotos: data.fotos, ficha_publica: data.ficha_publica, atualizacoes: data.atualizacoes });
+    setG({ titulo: data.titulo, cidade: data.cidade, endereco: data.endereco, status: data.status, etapa: data.etapa, prazo: data.prazo ?? "", publicado: data.publicado, fotos: data.fotos, foto_capa: data.foto_capa, ficha_publica: data.ficha_publica, atualizacoes: data.atualizacoes });
     setC({ ...clienteVazio, ...(data.cliente as Partial<Cliente>) });
     setD({ ...dadosVazios, ...(data.dados as Partial<Dados>) });
     const kk = data.custos as Partial<Custos>;
@@ -90,13 +90,14 @@ function Ficha() {
   }, [data]);
 
   useEffect(() => {
-    if (!g?.fotos.length) return;
-    supabase.storage.from("obras").createSignedUrls(g.fotos, 3600).then(({ data }) => {
+    const todas = [...(g?.fotos ?? []), ...(g?.foto_capa ? [g.foto_capa] : [])];
+    if (!todas.length) return;
+    supabase.storage.from("obras").createSignedUrls(todas, 3600).then(({ data }) => {
       const m: Record<string, string> = {};
       data?.forEach((x) => { if (x.path && x.signedUrl) m[x.path] = x.signedUrl; });
       setUrls(m);
     });
-  }, [g?.fotos]);
+  }, [g?.fotos, g?.foto_capa]);
 
   if (isLoading || (data && !g)) return <p className="p-10 text-center text-muted-foreground">Carregando…</p>;
   if (!data || !g) return <p className="p-10 text-center text-muted-foreground">Empreendimento não encontrado.</p>;
@@ -136,7 +137,7 @@ function Ficha() {
       // Delete the record first so a failure never leaves it pointing at missing photos.
       const { error } = await supabase.from("empreendimentos").delete().eq("id", id);
       if (error) { toast.error(`Não foi possível excluir: ${error.message}`); return; }
-      const arquivos = Array.from(new Set([...g!.fotos, ...pendRemove, ...novasRef.current]));
+      const arquivos = Array.from(new Set([...g!.fotos, ...(g!.foto_capa ? [g!.foto_capa] : []), ...pendRemove, ...novasRef.current]));
       novasRef.current = [];
       if (arquivos.length) {
         const { error: e2 } = await supabase.storage.from("obras").remove(arquivos);
@@ -173,6 +174,40 @@ function Ficha() {
       setG((prev) => (prev ? { ...prev, fotos: [...prev.fotos, ...novas] } : prev));
       toast.success("Foto enviada. Clique em Salvar para manter.");
     }
+  }
+
+  async function enviarCapa(f: File | undefined) {
+    if (!f) return;
+    if (!f.type.startsWith("image/")) { toast.error(`${f.name}: envie apenas imagens (JPG, PNG, WEBP…).`); return; }
+    if (f.size > MAX_FOTO) { toast.error(`${f.name}: a foto passa de 10 MB. Reduza o tamanho e tente de novo.`); return; }
+    setEnviando(true);
+    try {
+      const path = `${id}/capa-${Date.now()}-${f.name.replace(/[^\w.-]/g, "_")}`;
+      const { error } = await supabase.storage.from("obras").upload(path, f);
+      if (error) { toast.error(`Falha ao enviar ${f.name}: ${error.message}`); return; }
+      const antiga = g!.foto_capa;
+      if (antiga) await removerCapa(true);
+      novasRef.current = [...novasRef.current, path];
+      setG((prev) => (prev ? { ...prev, foto_capa: path } : prev));
+      toast.success("Foto principal enviada. Clique em Salvar para manter.");
+    } catch (e) {
+      toast.error(`Falha ao enviar foto: ${e instanceof Error ? e.message : "falha de conexão"}`);
+    } finally {
+      setEnviando(false);
+    }
+  }
+
+  async function removerCapa(silencioso = false) {
+    const p = g!.foto_capa;
+    if (!p) return;
+    if (novasRef.current.includes(p)) {
+      await supabase.storage.from("obras").remove([p]);
+      novasRef.current = novasRef.current.filter((x) => x !== p);
+    } else {
+      setPendRemove((r) => [...r, p]);
+      if (!silencioso) toast.info("A foto principal será apagada ao salvar a ficha.");
+    }
+    setG((prev) => (prev ? { ...prev, foto_capa: null } : prev));
   }
 
   async function removerFoto(p: string) {
@@ -320,10 +355,23 @@ function Ficha() {
             </div>
             <label className="mt-5 flex cursor-pointer items-center gap-3 rounded-md border border-border p-4">
               <input type="checkbox" className="h-5 w-5 accent-[var(--primary)]" checked={g.publicado} onChange={(e) => setGe({ publicado: e.target.checked })} />
-              <span><span className="font-bold">Mostrar este empreendimento no site</span><span className="block text-sm text-muted-foreground">No site aparecem só nome, cidade, endereço, status, etapa, prazo e fotos. Dados do cliente e valores nunca aparecem.</span></span>
+              <span><span className="font-bold">Mostrar este empreendimento no site</span><span className="block text-sm text-muted-foreground">No site aparecem só nome, cidade, endereço, status, etapa, prazo e a foto principal. Dados do cliente e valores nunca aparecem.</span></span>
             </label>
             <div className="mt-5">
-              <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Fotos da obra</p>
+              <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Foto principal (única que aparece no card do site)</p>
+              <div className="mt-2 mb-6 flex flex-wrap items-center gap-3">
+                {g.foto_capa ? (
+                  <div className="relative w-48 overflow-hidden rounded-md border border-primary/50">
+                    {urls[g.foto_capa] ? <img src={urls[g.foto_capa]} alt="Foto principal do empreendimento" className="h-32 w-full object-cover" /> : <div className="h-32 bg-secondary" />}
+                    <button onClick={() => removerCapa()} aria-label="Remover foto principal" className="absolute right-1 top-1 rounded-full bg-background/80 p-1 hover:text-destructive"><X className="h-4 w-4" /></button>
+                  </div>
+                ) : <p className="text-sm text-muted-foreground">Sem foto principal: o card aparece sem imagem.</p>}
+                <label className="inline-flex cursor-pointer items-center gap-2 rounded-md border-2 border-dashed border-primary/40 px-4 py-3 text-sm text-muted-foreground hover:border-primary">
+                  <ImagePlus className="h-5 w-5 text-primary" aria-hidden />{g.foto_capa ? "Trocar foto principal" : "Enviar foto principal"} <span className="text-[0.65rem]">até 10 MB</span>
+                  <input type="file" accept="image/*" disabled={enviando} className="sr-only" onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ""; void enviarCapa(f); }} />
+                </label>
+              </div>
+              <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Fotos do andamento da obra (só na área do cliente)</p>
               <div className="mt-2 grid grid-cols-2 gap-3 md:grid-cols-4">
                 {g.fotos.map((p) => (
                   <div key={p} className="relative overflow-hidden rounded-md border border-border">
