@@ -35,7 +35,7 @@ export const acessarObra = createServerFn({ method: "POST" })
     const { data: r, error } = await supabaseAdmin.rpc("portal_obra", { _id: data.id, _senha: data.senha, _ip: ip() });
     if (error) { console.error("portal_obra", error.message); throw new Error("Não foi possível verificar agora."); }
     const res = r as Record<string, unknown>;
-    if (res.erro) return { erro: res.erro as PortalErro };
+    if (res['erro']) return { erro: res['erro'] as PortalErro };
     const obra = res as unknown as PortalObra;
     return { obra: { ...obra, fotos: await assinar(supabaseAdmin, obra.fotos ?? []) } };
   });
@@ -50,7 +50,7 @@ export const acessarUnidade = createServerFn({ method: "POST" })
     const { data: r, error } = await supabaseAdmin.rpc("portal_unidade", { _obra: data.obra, _unidade: data.unidade, _senha: data.senha, _ip: ip() });
     if (error) { console.error("portal_unidade", error.message); throw new Error("Não foi possível verificar agora."); }
     const res = r as Record<string, unknown>;
-    if (res.erro) return { erro: res.erro as PortalErro };
+    if (res['erro']) return { erro: res['erro'] as PortalErro };
     const u = res as unknown as PortalUnidade;
     return { unidade: { ...u, fotos: await assinar(supabaseAdmin, u.fotos ?? []) } };
   });
