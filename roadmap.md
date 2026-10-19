@@ -1,4 +1,8 @@
 # Roadmap
+- [x] Atualizar cidades atendidas e retirar apresentação pessoal do responsável
+- [x] Integrar obra cadastrada, pesquisa e carrossel público sem duplicação, preservando contadores
+- [x] Trocar ação do cabeçalho por “Já sou cliente”
+- [x] Verificar navegação, filtros, carrossel mobile e integração com cadastro administrativo
 - [x] Easter egg: clique na logo do topo abre /admin (login)
 - [x] Login administrativo seguro (WhatsApp como usuário, senha sem estar no código)
 - [x] Ficha técnica: cliente, empreendimento, levantamento de serviços

@@ -1,0 +1,1 @@
+export const cidadesAtendidas = ["Porto Belo", "Itapema", "Balneário Camboriú", "Camboriú", "Itajaí"] as const;

@@ -3,17 +3,26 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState, type ReactNode } from "react";
 import { ArrowLeft, FileText, ImagePlus, Plus, Save, Trash2, X } from "lucide-react";
 import { toast } from "sonner";
+import { cidadesAtendidas } from "@/data/cidades";
 import { supabase } from "@/integrations/supabase/client";
 import {
   brl, calcular, clienteVazio, custosVazios, dadosVazios, uid,
   type Cliente, type Custos, type Dados,
 } from "@/lib/orcamento";
 
-export const Route = createFileRoute("/_authenticated/admin/$id")({ component: Ficha });
+export const Route = createFileRoute("/_authenticated/admin/$id")({ head: () => ({ meta: [
+  { title: "Ficha técnica — Renovar BR" },
+  { name: "description", content: "Ficha técnica e custos do empreendimento na Renovar BR." },
+  { property: "og:title", content: "Ficha técnica — Renovar BR" },
+  { property: "og:description", content: "Dados técnicos do empreendimento na Renovar BR." },
+  { property: "og:type", content: "website" },
+  { name: "twitter:card", content: "summary" },
+  { name: "robots", content: "noindex, nofollow" },
+] }), component: Ficha });
 
 type Geral = { titulo: string; cidade: string; endereco: string; status: string; etapa: string; prazo: string; publicado: boolean; fotos: string[] };
 
-const CIDADES = ["Porto Belo", "Itapema", "Balneário Camboriú", "Camboriú", "Outra"];
+const CIDADES = [...cidadesAtendidas, "Outra"];
 const STATUS = ["Orçamento", "Aguardando aprovação", "Aprovado", "Em andamento", "Acabamento e finalização", "Concluída"];
 const UNIDADES = ["m²", "m", "un", "vb", "h"];
 

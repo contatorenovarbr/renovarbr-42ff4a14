@@ -5,7 +5,15 @@ import { supabase } from "@/integrations/supabase/client";
 import logo from "@/assets/renovar-logo.png.asset.json";
 import { brl, calcular, clienteVazio, custosVazios, dadosVazios, type Cliente, type Custos, type Dados } from "@/lib/orcamento";
 
-export const Route = createFileRoute("/_authenticated/admin/$id_/orcamento")({ component: Orcamento });
+export const Route = createFileRoute("/_authenticated/admin/$id_/orcamento")({ head: () => ({ meta: [
+  { title: "Orçamento profissional — Renovar BR" },
+  { name: "description", content: "Proposta de serviços de pintura, reforma e acabamento da Renovar BR." },
+  { property: "og:title", content: "Orçamento profissional — Renovar BR" },
+  { property: "og:description", content: "Proposta profissional da Renovar BR." },
+  { property: "og:type", content: "website" },
+  { name: "twitter:card", content: "summary" },
+  { name: "robots", content: "noindex, nofollow" },
+] }), component: Orcamento });
 
 const WA_NUM = "+55 (47) 99795-3323";
 const fmtDate = (s: string) => (s ? new Date(s + "T12:00:00").toLocaleDateString("pt-BR") : "");
@@ -119,7 +127,7 @@ function Orcamento() {
         </section>
 
         <footer className="mt-10 border-t-4 border-amber-400 pt-3 text-center text-xs text-neutral-600">
-          Renovar BR · Pintura • Reforma • Acabamento · WhatsApp {WA_NUM} · Porto Belo · Itapema · Balneário Camboriú · Camboriú — SC
+          Renovar BR · Pintura • Reforma • Acabamento · WhatsApp {WA_NUM} · Porto Belo · Itapema · Balneário Camboriú · Camboriú · Itajaí — SC
         </footer>
       </article>
     </div>

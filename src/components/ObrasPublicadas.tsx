@@ -1,63 +1,94 @@
 import { useEffect, useState } from "react";
-import { CalendarDays, MapPin } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { ArrowLeft, ArrowRight, Search, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { Reveal } from "./Reveal";
-
-type Obra = { id: string; titulo: string; cidade: string; endereco: string; status: string; etapa: string; prazo: string | null; fotos: string[] };
+import { filtrarObras, type ObraPublica } from "@/lib/obras-publicas";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Carousel, CarouselContent, CarouselItem, type CarouselApi } from "@/components/ui/carousel";
+import { ObraAtual, FeriasCountdown } from "./ObraAtual";
 
 export function ObrasPublicadas() {
-  const [obras, setObras] = useState<Obra[]>([]);
-  const [urls, setUrls] = useState<Record<string, string>>({});
-
+  const [mounted, setMounted] = useState(false);
+  const [pesquisa, setPesquisa] = useState("");
+  const [api, setApi] = useState<CarouselApi>();
+  const [selected, setSelected] = useState(0);
+  const [prev, setPrev] = useState(false);
+  const [next, setNext] = useState(false);
+  const [slideHeight, setSlideHeight] = useState<number>();
+  useEffect(() => setMounted(true), []);
+  const { data: obras = [], isPending, isError, refetch } = useQuery({
+    queryKey: ["obras-publicas"],
+    enabled: mounted,
+    staleTime: 0,
+    refetchOnMount: "always",
+    refetchInterval: 60000,
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc("obras_publicas");
+      if (error) throw error;
+      return (data ?? []) as ObraPublica[];
+    },
+  });
+  const paths = Array.from(new Set(obras.flatMap((o) => o.fotos)));
+  const { data: urls = {} } = useQuery({
+    queryKey: ["fotos-publicas", paths],
+    enabled: mounted && paths.length > 0,
+    staleTime: 1800000,
+    refetchInterval: 1800000,
+    queryFn: async () => {
+      const { data, error } = await supabase.storage.from("obras").createSignedUrls(paths, 3600);
+      if (error) throw error;
+      const result: Record<string, string> = {};
+      data?.forEach((foto) => { if (foto.path && foto.signedUrl) result[foto.path] = foto.signedUrl; });
+      return result;
+    },
+  });
+  const filtradas = filtrarObras(obras, pesquisa);
   useEffect(() => {
-    supabase.rpc("obras_publicas").then(async ({ data }) => {
-      const list = (data ?? []) as Obra[];
-      setObras(list);
-      const paths = list.flatMap((o) => o.fotos.slice(0, 3));
-      if (!paths.length) return;
-      const { data: s } = await supabase.storage.from("obras").createSignedUrls(paths, 3600);
-      const m: Record<string, string> = {};
-      s?.forEach((x) => { if (x.path && x.signedUrl) m[x.path] = x.signedUrl; });
-      setUrls(m);
-    });
-  }, []);
+    if (!api) return;
+    const sync = () => { setSelected(api.selectedScrollSnap()); setPrev(api.canScrollPrev()); setNext(api.canScrollNext()); };
+    sync();
+    api.on("select", sync);
+    api.on("reInit", sync);
+    return () => { api.off("select", sync); api.off("reInit", sync); };
+  }, [api]);
+  useEffect(() => { api?.scrollTo(0, true); }, [api, pesquisa]);
+  useEffect(() => {
+    const slide = api?.slideNodes()[selected];
+    if (!slide) return;
+    const observer = new ResizeObserver(() => setSlideHeight(slide.getBoundingClientRect().height));
+    observer.observe(slide);
+    return () => observer.disconnect();
+  }, [api, selected, pesquisa, obras]);
 
-  if (!obras.length) return null;
   return (
-    <section className="bg-surface pb-24">
-      <div className="mx-auto max-w-7xl space-y-8 px-5">
-        {obras.map((o, idx) => (
-          <Reveal key={o.id} delay={idx * 80}>
-            <article className="overflow-hidden rounded-xl border border-primary/30 bg-card shadow-2xl transition hover:border-primary/60">
-              {o.fotos.length > 0 && (
-                <div className="grid gap-3 p-3 md:grid-cols-3">
-                  {o.fotos.slice(0, 3).map((p) => (
-                    <figure key={p} className="group overflow-hidden rounded-lg">
-                      {urls[p] ? <img src={urls[p]} alt={`Foto da obra ${o.titulo}`} loading="lazy" className="h-64 w-full object-cover transition duration-700 group-hover:scale-105" /> : <div className="h-64 bg-secondary" />}
-                    </figure>
-                  ))}
-                </div>
-              )}
-              <div className="grid gap-6 p-6 md:grid-cols-2 md:p-10">
-                <div>
-                  <span className="inline-flex items-center gap-2 rounded-full border border-accent/40 bg-accent/10 px-3 py-1 text-xs font-bold uppercase tracking-widest text-accent">
-                    <span className="relative flex h-2.5 w-2.5" aria-hidden>
-                      <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-accent opacity-60 [animation-duration:2s] motion-reduce:hidden" />
-                      <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-accent" />
-                    </span>
-                    {o.status}
-                  </span>
-                  <h3 className="mt-4 font-display text-3xl font-black uppercase">{o.titulo}</h3>
-                  {(o.endereco || o.cidade) && <p className="mt-3 flex items-center gap-2 font-semibold"><MapPin className="h-4 w-4 text-primary" aria-hidden />{[o.endereco, o.cidade && `${o.cidade}/SC`].filter(Boolean).join(" — ")}</p>}
-                </div>
-                <div className="space-y-3">
-                  {o.etapa && <p className="text-sm font-semibold">{o.etapa}</p>}
-                  {o.prazo && <p className="flex items-center gap-2 text-sm text-muted-foreground"><CalendarDays className="h-4 w-4" aria-hidden />Entrega prevista: {new Date(o.prazo + "T12:00:00").toLocaleDateString("pt-BR")}</p>}
-                </div>
+    <section id="obra" aria-labelledby="obras-titulo" className="scroll-mt-24 bg-surface py-16 md:py-24">
+      <div className="mx-auto max-w-7xl px-5">
+        <p className="text-sm font-bold uppercase tracking-widest text-primary">Acompanhe sua obra</p>
+        <h2 id="obras-titulo" className="mt-3 text-4xl font-black uppercase md:text-6xl">Nossas obras</h2>
+        <div role="search" className="relative mt-8 mb-6">
+          <label htmlFor="pesquisa-obras" className="sr-only">Pesquisar empreendimentos por nome, cidade ou endereço</label>
+          <Search className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" aria-hidden />
+          <Input id="pesquisa-obras" value={pesquisa} onChange={(e) => setPesquisa(e.target.value)} placeholder="Nome, cidade ou endereço" className="h-12 bg-background pl-12 pr-14" aria-controls="resultados-obras" />
+          {pesquisa && <Button variant="ghost" size="icon" onClick={() => { setPesquisa(""); document.getElementById("pesquisa-obras")?.focus(); }} aria-label="Limpar pesquisa" title="Limpar pesquisa" className="absolute right-2 top-1/2 -translate-y-1/2"><X aria-hidden /></Button>}
+        </div>
+        <div id="resultados-obras">
+          {isPending ? <p role="status" className="py-12 text-center text-muted-foreground">Carregando obras…</p> : isError ? <div role="alert" className="py-12 text-center"><p className="text-muted-foreground">Não foi possível carregar as obras.</p><Button variant="outline" onClick={() => refetch()} className="mt-4">Tentar novamente</Button></div> : filtradas.length === 0 ? <div role="status" className="py-12 text-center"><p className="text-lg font-semibold">{obras.length ? "Nenhuma obra encontrada" : "Nenhuma obra publicada no momento"}</p>{obras.length > 0 && <p className="mt-2 text-sm text-muted-foreground">Tente outro nome, cidade ou endereço.</p>}</div> : (
+            <Carousel setApi={setApi} opts={{ align: "start", duration: 25 }} aria-label="Obras publicadas" tabIndex={0}>
+              <div style={{ height: slideHeight }} className="overflow-hidden transition-[height] duration-300 motion-reduce:transition-none">
+              <CarouselContent className="items-start">
+                {filtradas.map((obra, i) => <CarouselItem key={obra.id} aria-label={`${i + 1} de ${filtradas.length}: ${obra.titulo}`} aria-hidden={i !== selected} inert={i !== selected}><ObraAtual obra={obra} urls={urls} /></CarouselItem>)}
+              </CarouselContent>
               </div>
-            </article>
-          </Reveal>
-        ))}
+              <div className="mt-5 grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3">
+                <Button variant="outline" size="icon" disabled={!prev} onClick={() => api?.scrollPrev()} aria-label="Obra anterior" title="Obra anterior"><ArrowLeft aria-hidden /></Button>
+                <div className="min-w-0 text-center"><p role="status" aria-live="polite" className="text-xs text-muted-foreground">{Math.min(selected + 1, filtradas.length)} de {filtradas.length} {filtradas.length === 1 ? "obra" : "obras"}</p><div className="mt-1 flex flex-wrap justify-center gap-1">{filtradas.map((obra, i) => <Button key={obra.id} variant="ghost" size="icon" className="h-7 w-7" aria-label={`Ver obra ${i + 1}: ${obra.titulo}`} aria-current={i === selected ? "true" : undefined} title={obra.titulo} onClick={() => api?.scrollTo(i)}><span className={`h-2 w-2 rounded-full ${i === selected ? "bg-primary" : "bg-muted-foreground/40"}`} /></Button>)}</div></div>
+                <Button variant="outline" size="icon" disabled={!next} onClick={() => api?.scrollNext()} aria-label="Próxima obra" title="Próxima obra"><ArrowRight aria-hidden /></Button>
+              </div>
+            </Carousel>
+          )}
+        </div>
+        <FeriasCountdown />
       </div>
     </section>
   );
