@@ -5,7 +5,15 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { brl, calcular, custosVazios, type Custos } from "@/lib/orcamento";
 
-export const Route = createFileRoute("/_authenticated/admin/")({ component: AdminHome });
+export const Route = createFileRoute("/_authenticated/admin/")({ head: () => ({ meta: [
+  { title: "Empreendimentos — Renovar BR" },
+  { name: "description", content: "Catálogo interno de empreendimentos da Renovar BR." },
+  { property: "og:title", content: "Empreendimentos — Renovar BR" },
+  { property: "og:description", content: "Gestão de empreendimentos e propostas da Renovar BR." },
+  { property: "og:type", content: "website" },
+  { name: "twitter:card", content: "summary" },
+  { name: "robots", content: "noindex, nofollow" },
+] }), component: AdminHome });
 
 function AdminHome() {
   const qc = useQueryClient();

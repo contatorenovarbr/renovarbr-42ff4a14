@@ -11,3 +11,6 @@
 - Admin access: first account created becomes the only admin (DB trigger); login maps WhatsApp digits to a synthetic email. Why: no passwords in code, no public admin signup.
 - Quote math lives in src/lib/orcamento.ts (tested); profit/taxes are spread into line values on the PDF. Why: single source of truth, profit stays hidden.
 - Public site reads projects only via the obras_publicas() RPC and photo access via foto_publicada(). Why: client data and prices never reach anonymous visitors.
+
+- Public projects use one RPC-fed carousel; ObraAtual renders a record, never static project data. Why: admin changes, publication and photo removals stay authoritative.
+- Service cities share src/data/cidades.ts across the homepage and administrative selection. Why: keep supported cities consistent.

@@ -3,8 +3,8 @@ import { ObrasPublicadas } from "@/components/ObrasPublicadas";
 import { ArrowRight, MessageCircle, PaintRoller, Layers, Brush, Building2, Wrench, Store, MapPin, ImagePlus, Check } from "lucide-react";
 import hero from "@/assets/hero.jpg";
 import { Logo } from "@/components/Logo";
-import responsavel from "@/assets/responsavel.jpg.asset.json";
-import { ObraAtual } from "@/components/ObraAtual";
+import { cidadesAtendidas } from "@/data/cidades";
+import { Button } from "@/components/ui/button";
 
 const WA = "https://wa.me/5547997953323?text=Ol%C3%A1%2C%20quero%20solicitar%20um%20or%C3%A7amento";
 
@@ -12,7 +12,7 @@ export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
       { title: "Renovar BR | Pintura e Acabamento em SC" },
-      { name: "description", content: "Pintura interna e externa, fachadas, texturas e manutenção predial em Porto Belo, Itapema, Balneário Camboriú e Camboriú. Solicite seu orçamento." },
+      { name: "description", content: "Pintura interna e externa, fachadas, texturas e manutenção predial em Porto Belo, Itapema, Balneário Camboriú, Camboriú e Itajaí. Solicite seu orçamento." },
       { property: "og:title", content: "Renovar BR | Pintura e Acabamento em SC" },
       { property: "og:description", content: "Pintura, reforma e acabamento para construtoras, condomínios, residências e comércios no litoral de SC." },
       { property: "og:type", content: "website" },
@@ -39,7 +39,7 @@ const steps = [
   { t: "Revisão final", d: "Conferência ponto a ponto antes da entrega." },
 ];
 
-const areas = ["Porto Belo", "Itapema", "Balneário Camboriú", "Camboriú"];
+const areas = cidadesAtendidas;
 const audiences = ["Construtoras", "Engenheiros", "Arquitetos", "Administradoras de condomínios", "Residências", "Comércios"];
 
 function WhatsButton({ className = "" }: { className?: string }) {
@@ -77,7 +77,7 @@ function Index() {
       <a href="#conteudo" className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded focus:bg-primary focus:px-4 focus:py-2 focus:text-primary-foreground">Pular para o conteúdo</a>
 
       <header className="fixed inset-x-0 top-0 z-40 border-b border-border bg-background/80 backdrop-blur">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-5 py-4">
+        <div className="mx-auto grid max-w-7xl grid-cols-[minmax(0,1fr)_auto] items-center gap-3 px-5 py-4 md:flex md:justify-between">
           <Link to="/admin" aria-label="Renovar BR">
             <Logo />
           </Link>
@@ -87,7 +87,7 @@ function Index() {
             <a className="hover:text-foreground" href="#processo">Como trabalhamos</a>
             <a className="hover:text-foreground" href="#areas">Áreas</a>
           </nav>
-          <a href={WA} target="_blank" rel="noopener noreferrer" className="rounded-md bg-primary px-4 py-2 text-sm font-bold text-primary-foreground hover:brightness-110">Orçamento</a>
+          <Button asChild className="shrink-0 font-bold"><a href="#obra">Já sou cliente</a></Button>
         </div>
       </header>
 
@@ -105,7 +105,7 @@ function Index() {
               Pintura e acabamento <span className="text-primary">de alto padrão</span> para sua obra.
             </h1>
             <p className="mt-8 max-w-xl text-lg text-muted-foreground">
-              Pintura, reforma e acabamento para construtoras, condomínios, residências e comércios em Porto Belo, Itapema, Balneário Camboriú e Camboriú.
+              Pintura, reforma e acabamento para construtoras, condomínios, residências e comércios em Porto Belo, Itapema, Balneário Camboriú, Camboriú e Itajaí.
             </p>
             <div className="mt-10 flex flex-col gap-3 sm:flex-row">
               <QuoteButton /><WhatsButton />
@@ -113,7 +113,6 @@ function Index() {
           </div>
         </section>
 
-        <ObraAtual />
         <ObrasPublicadas />
 
 
@@ -149,14 +148,11 @@ function Index() {
 
         {/* PROCESS */}
         <section id="processo" className="mx-auto max-w-7xl px-5 py-24 md:py-32">
-          <div className="grid gap-16 lg:grid-cols-2">
+          <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,2fr)]">
             <div>
               <p className="text-sm font-bold uppercase tracking-widest text-primary">Processo</p>
               <h2 className="mt-3 text-4xl font-black uppercase md:text-6xl">Como trabalhamos</h2>
-              <figure className="mt-10">
-                <img src={responsavel.url} alt="Responsável da Renovar BR em obra, com camiseta da empresa" loading="lazy" width={959} height={1280} className="aspect-[4/5] w-full rounded-lg object-cover object-top" />
-                <figcaption className="mt-3 text-xs font-bold uppercase tracking-widest text-primary">Responsável Renovar BR · acompanha cada obra</figcaption>
-              </figure>
+
             </div>
             <ol className="space-y-2">
               {steps.map((s, i) => (
@@ -177,7 +173,7 @@ function Index() {
           <div className="mx-auto max-w-7xl px-5">
             <p className="text-sm font-bold uppercase tracking-widest text-accent">Áreas atendidas</p>
             <h2 className="mt-3 text-4xl font-black uppercase md:text-6xl">Onde atendemos</h2>
-            <ul className="mt-14 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <ul className="mt-14 grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
               {areas.map((a) => (
                 <li key={a} className="flex items-center gap-3 rounded-lg border border-paper-foreground/15 p-6">
                   <MapPin className="h-6 w-6 text-accent" aria-hidden />
@@ -210,7 +206,7 @@ function Index() {
         <div className="mx-auto flex max-w-7xl flex-col gap-6 px-5 py-10 md:flex-row md:items-center md:justify-between">
           <div>
             <Logo />
-            <p className="mt-1 text-sm text-muted-foreground">Pintura, reforma e acabamento · Porto Belo · Itapema · Balneário Camboriú · Camboriú — SC</p>
+            <p className="mt-1 text-sm text-muted-foreground">Pintura, reforma e acabamento · Porto Belo · Itapema · Balneário Camboriú · Camboriú · Itajaí — SC</p>
           </div>
           <a href={WA} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 font-semibold text-accent hover:underline">
             <MessageCircle className="h-5 w-5" aria-hidden /> (47) 99795-3323
