@@ -10,3 +10,7 @@
 - [x] Botão "Gerar Orçamento" com logo Renovar BR + exportar PDF
 - [x] Cards de obras no admin com opção de mostrar no site público
 - [x] Obras públicas aparecem na página inicial
+- [x] Fotos: remoção só ao salvar, limite 10 MB, limpeza de envios não salvos
+- [x] Ficha: rótulos visíveis no celular, erros claros, nota do desconto
+- [x] PDF: centavos das linhas batem com o total
+- [ ] Modal de condomínio com senhas por unidade (precisa de etapa segura no servidor)
