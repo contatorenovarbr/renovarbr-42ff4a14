@@ -44,7 +44,7 @@ function Orcamento() {
     ...(t.outros > 0 ? [{ desc: "Logística, descarte e despesas operacionais", un: "vb", qtd: 1, valor: t.outros * f }] : []),
   ];
   const centavos = arredondarLinhas(brutas.map((l) => l.valor), t.precoBruto);
-  const linhas = brutas.map((l, i) => ({ ...l, valor: centavos[i] }));
+  const linhas = brutas.map((l, i) => ({ ...l, valor: centavos[i] ?? 0 }));
 
   return (
     <div className="bg-background pb-10 print:bg-white print:p-0">
