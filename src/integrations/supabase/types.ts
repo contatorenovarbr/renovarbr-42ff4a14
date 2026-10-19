@@ -25,6 +25,7 @@ export type Database = {
           endereco: string
           etapa: string
           ficha_publica: string
+          foto_capa: string | null
           fotos: string[]
           id: string
           prazo: string | null
@@ -44,6 +45,7 @@ export type Database = {
           endereco?: string
           etapa?: string
           ficha_publica?: string
+          foto_capa?: string | null
           fotos?: string[]
           id?: string
           prazo?: string | null
@@ -63,6 +65,7 @@ export type Database = {
           endereco?: string
           etapa?: string
           ficha_publica?: string
+          foto_capa?: string | null
           fotos?: string[]
           id?: string
           prazo?: string | null
