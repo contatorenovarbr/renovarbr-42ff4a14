@@ -15,7 +15,8 @@ function normalizar(texto: string) {
 
 export function filtrarObras(obras: ObraPublica[], pesquisa: string) {
   const termo = normalizar(pesquisa);
-  const unicas = Array.from(new Map(obras.map((obra) => [obra.id, obra])).values());
+  const ativa = (obra: ObraPublica) => ["em andamento", "acabamento e finalizacao"].includes(normalizar(obra.status));
+  const unicas = Array.from(new Map(obras.map((obra) => [obra.id, obra])).values()).sort((a, b) => Number(ativa(b)) - Number(ativa(a)));
   if (!termo) return unicas;
   return unicas.filter((obra) => [obra.titulo, obra.cidade, obra.endereco].some((campo) => normalizar(campo).includes(termo)));
 }

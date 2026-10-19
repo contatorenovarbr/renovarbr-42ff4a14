@@ -15,6 +15,7 @@ export function ObrasPublicadas() {
   const [selected, setSelected] = useState(0);
   const [prev, setPrev] = useState(false);
   const [next, setNext] = useState(false);
+  const [slideHeight, setSlideHeight] = useState<number>();
   useEffect(() => setMounted(true), []);
   const { data: obras = [], isPending, isError, refetch } = useQuery({
     queryKey: ["obras-publicas"],
@@ -52,6 +53,13 @@ export function ObrasPublicadas() {
     return () => { api.off("select", sync); api.off("reInit", sync); };
   }, [api]);
   useEffect(() => { api?.scrollTo(0, true); }, [api, pesquisa]);
+  useEffect(() => {
+    const slide = api?.slideNodes()[selected];
+    if (!slide) return;
+    const observer = new ResizeObserver(() => setSlideHeight(slide.getBoundingClientRect().height));
+    observer.observe(slide);
+    return () => observer.disconnect();
+  }, [api, selected, pesquisa, obras]);
 
   return (
     <section id="obra" aria-labelledby="obras-titulo" className="scroll-mt-24 bg-surface py-16 md:py-24">
@@ -67,9 +75,11 @@ export function ObrasPublicadas() {
         <div id="resultados-obras">
           {isPending ? <p role="status" className="py-12 text-center text-muted-foreground">Carregando obras…</p> : isError ? <div role="alert" className="py-12 text-center"><p className="text-muted-foreground">Não foi possível carregar as obras.</p><Button variant="outline" onClick={() => refetch()} className="mt-4">Tentar novamente</Button></div> : filtradas.length === 0 ? <div role="status" className="py-12 text-center"><p className="text-lg font-semibold">{obras.length ? "Nenhuma obra encontrada" : "Nenhuma obra publicada no momento"}</p>{obras.length > 0 && <p className="mt-2 text-sm text-muted-foreground">Tente outro nome, cidade ou endereço.</p>}</div> : (
             <Carousel setApi={setApi} opts={{ align: "start", duration: 25 }} aria-label="Obras publicadas" tabIndex={0}>
-              <CarouselContent className="items-stretch">
+              <div style={{ height: slideHeight }} className="overflow-hidden transition-[height] duration-300 motion-reduce:transition-none">
+              <CarouselContent className="items-start">
                 {filtradas.map((obra, i) => <CarouselItem key={obra.id} aria-label={`${i + 1} de ${filtradas.length}: ${obra.titulo}`} aria-hidden={i !== selected} inert={i !== selected}><ObraAtual obra={obra} urls={urls} /></CarouselItem>)}
               </CarouselContent>
+              </div>
               <div className="mt-5 grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3">
                 <Button variant="outline" size="icon" disabled={!prev} onClick={() => api?.scrollPrev()} aria-label="Obra anterior" title="Obra anterior"><ArrowLeft aria-hidden /></Button>
                 <div className="min-w-0 text-center"><p role="status" aria-live="polite" className="text-xs text-muted-foreground">{Math.min(selected + 1, filtradas.length)} de {filtradas.length} {filtradas.length === 1 ? "obra" : "obras"}</p><div className="mt-1 flex flex-wrap justify-center gap-1">{filtradas.map((obra, i) => <Button key={obra.id} variant="ghost" size="icon" className="h-7 w-7" aria-label={`Ver obra ${i + 1}: ${obra.titulo}`} aria-current={i === selected ? "true" : undefined} title={obra.titulo} onClick={() => api?.scrollTo(i)}><span className={`h-2 w-2 rounded-full ${i === selected ? "bg-primary" : "bg-muted-foreground/40"}`} /></Button>)}</div></div>

@@ -27,6 +27,10 @@ describe("Publicação das obras", () => {
   it("exibe uma obra uma única vez por cadastro", () => {
     expect(filtrarObras([obra, obra], "")).toEqual([obra]);
   });
+  it("mantém a obra em andamento antes de propostas e obras concluídas", () => {
+    const proposta = { ...obra, id: "proposta", status: "Orçamento" };
+    expect(filtrarObras([proposta, obra], "").map((o) => o.id)).toEqual(["cadastro-real", "proposta"]);
+  });
   it("usa mudanças do cadastro em vez de manter dados fixos", () => {
     const editada = { ...obra, titulo: "Nome atualizado", cidade: "Itajaí", fotos: ["nova-foto.jpg"] };
     expect(filtrarObras([editada], "Yolanda")).toEqual([]);
