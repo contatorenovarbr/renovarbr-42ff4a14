@@ -80,6 +80,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
+      { name: "google-site-verification", content: "448Gmy2Od41EEqYnbCWJumnV5WHP7nq7ErdcrnySY4s" },
       { title: "Renovar BR" },
       { name: "description", content: "Pintura, reforma e acabamento em Santa Catarina." },
     ],
