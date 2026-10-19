@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { ArrowLeft, Download } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import logo from "@/assets/renovar-logo.png.asset.json";
-import { brl, calcular, clienteVazio, custosVazios, dadosVazios, type Cliente, type Custos, type Dados } from "@/lib/orcamento";
+import { arredondarLinhas, brl, calcular, clienteVazio, custosVazios, dadosVazios, type Cliente, type Custos, type Dados } from "@/lib/orcamento";
 
 export const Route = createFileRoute("/_authenticated/admin/$id_/orcamento")({ head: () => ({ meta: [
   { title: "Orçamento profissional — Renovar BR" },
@@ -37,12 +37,14 @@ function Orcamento() {
   const hoje = new Date().toLocaleDateString("pt-BR");
 
   // Lucro e impostos ficam embutidos proporcionalmente em cada linha.
-  const linhas = [
+  const brutas = [
     ...k.itens.filter((i) => i.descricao || i.quantidade).map((i) => ({ desc: i.descricao, un: i.unidade, qtd: i.quantidade, valor: i.quantidade * i.maoObraUnit * f })),
     ...(t.materiais > 0 ? [{ desc: "Materiais (conforme especificação)", un: "vb", qtd: 1, valor: t.materiais * f }] : []),
     ...(t.equipamentos > 0 ? [{ desc: "Equipamentos e andaimes", un: "vb", qtd: 1, valor: t.equipamentos * f }] : []),
     ...(t.outros > 0 ? [{ desc: "Logística, descarte e despesas operacionais", un: "vb", qtd: 1, valor: t.outros * f }] : []),
   ];
+  const centavos = arredondarLinhas(brutas.map((l) => l.valor), t.precoBruto);
+  const linhas = brutas.map((l, i) => ({ ...l, valor: centavos[i] }));
 
   return (
     <div className="bg-background pb-10 print:bg-white print:p-0">

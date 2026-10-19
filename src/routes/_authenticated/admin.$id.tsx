@@ -193,7 +193,7 @@ function Ficha() {
         <Link to="/admin" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground"><ArrowLeft className="h-4 w-4" aria-hidden /> Voltar</Link>
         <div className="flex flex-wrap gap-2">
           <button onClick={excluir} className="inline-flex items-center gap-2 rounded-md border border-border px-3 py-2 text-sm text-destructive hover:border-destructive"><Trash2 className="h-4 w-4" aria-hidden />Excluir</button>
-          <button onClick={salvar} disabled={saving} className="inline-flex items-center gap-2 rounded-md bg-secondary px-4 py-2 text-sm font-bold hover:brightness-125"><Save className="h-4 w-4" aria-hidden />{saving ? "Salvando…" : "Salvar"}</button>
+          <button onClick={salvar} disabled={saving || enviando} className="inline-flex items-center gap-2 rounded-md bg-secondary px-4 py-2 text-sm font-bold hover:brightness-125"><Save className="h-4 w-4" aria-hidden />{saving ? "Salvando…" : "Salvar"}</button>
           <button onClick={async () => { if (await salvar()) navigate({ to: "/admin/$id/orcamento", params: { id } }); }} className="inline-flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-bold text-primary-foreground hover:brightness-110"><FileText className="h-4 w-4" aria-hidden />Gerar Orçamento</button>
         </div>
       </div>
@@ -331,8 +331,8 @@ function Ficha() {
                   </div>
                 ))}
                 <label className="flex h-28 cursor-pointer flex-col items-center justify-center gap-1 rounded-md border-2 border-dashed border-primary/40 text-sm text-muted-foreground hover:border-primary">
-                  <ImagePlus className="h-6 w-6 text-primary" aria-hidden />Adicionar fotos
-                  <input type="file" accept="image/*" multiple className="sr-only" onChange={(e) => upload(e.target.files)} />
+                  <ImagePlus className="h-6 w-6 text-primary" aria-hidden />{enviando ? "Enviando…" : "Adicionar fotos"}<span className="text-[0.65rem]">até 10 MB</span>
+                  <input type="file" accept="image/*" multiple disabled={enviando} className="sr-only" onChange={(e) => { void upload(e.target.files); e.target.value = ""; }} />
                 </label>
               </div>
             </div>

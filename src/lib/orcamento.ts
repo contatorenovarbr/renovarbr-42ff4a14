@@ -71,3 +71,13 @@ export function whatsappToEmail(phone: string) {
   const digits = phone.replace(/\D/g, "");
   return digits ? `${digits}@admin.renovarbr.app` : "";
 }
+
+// Round each PDF line to cents and put any rounding remainder on the last line,
+// so the lines always add up exactly to the gross price shown as subtotal/total.
+export function arredondarLinhas(valores: number[], total: number) {
+  if (!valores.length) return [];
+  const linhas = valores.map(r2);
+  const soma = linhas.slice(0, -1).reduce((s, v) => s + v, 0);
+  linhas[linhas.length - 1] = r2(total - soma);
+  return linhas;
+}
