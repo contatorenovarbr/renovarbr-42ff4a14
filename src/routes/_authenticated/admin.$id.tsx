@@ -128,14 +128,6 @@ function Ficha() {
     return () => { document.removeEventListener("visibilitychange", vis); window.removeEventListener("pagehide", flush); window.removeEventListener("online", flush); };
   }, []);
 
-  useEffect(() => {
-    if (true) return;
-    setG({ titulo: data.titulo, cidade: data.cidade, endereco: data.endereco, status: data.status, etapa: data.etapa, prazo: data.prazo ?? "", publicado: data.publicado, fotos: data.fotos, foto_capa: data.foto_capa, ficha_publica: data.ficha_publica, atualizacoes: data.atualizacoes });
-    setC({ ...clienteVazio, ...(data.cliente as Partial<Cliente>) });
-    setD({ ...dadosVazios, ...(data.dados as Partial<Dados>) });
-    const kk = data.custos as Partial<Custos>;
-    setK({ ...custosVazios, ...kk, outros: { ...custosVazios.outros, ...(kk.outros ?? {}) } });
-  }, [data]);
 
   useEffect(() => {
     const todas = [...(g?.fotos ?? []), ...(g?.foto_capa ? [g.foto_capa] : [])];
@@ -189,6 +181,8 @@ function Ficha() {
     }
   }
 
+  salvarRef.current = salvar;
+
   async function excluir() {
     if (!confirm("Excluir este empreendimento e todas as fotos dele? Essa ação não pode ser desfeita.")) return;
     try {
@@ -230,7 +224,7 @@ function Ficha() {
     if (novas.length) {
       novasRef.current = [...novasRef.current, ...novas];
       setG((prev) => (prev ? { ...prev, fotos: [...prev.fotos, ...novas] } : prev));
-      toast.success("Foto enviada. Clique em Salvar para manter.");
+      toast.success("Foto enviada. Será salva automaticamente.");
     }
   }
 
@@ -247,7 +241,7 @@ function Ficha() {
       if (antiga) await removerCapa(true);
       novasRef.current = [...novasRef.current, path];
       setG((prev) => (prev ? { ...prev, foto_capa: path } : prev));
-      toast.success("Foto principal enviada. Clique em Salvar para manter.");
+      toast.success("Foto principal enviada. Será salva automaticamente.");
     } catch (e) {
       toast.error(`Falha ao enviar foto: ${e instanceof Error ? e.message : "falha de conexão"}`);
     } finally {
@@ -263,7 +257,7 @@ function Ficha() {
       novasRef.current = novasRef.current.filter((x) => x !== p);
     } else {
       setPendRemove((r) => [...r, p]);
-      if (!silencioso) toast.info("A foto principal será apagada ao salvar a ficha.");
+      if (!silencioso) toast.info("Foto principal removida.");
     }
     setG((prev) => (prev ? { ...prev, foto_capa: null } : prev));
   }
@@ -276,7 +270,7 @@ function Ficha() {
       novasRef.current = novasRef.current.filter((x) => x !== p);
     } else {
       setPendRemove((r) => [...r, p]);
-      toast.info("A foto será apagada ao salvar a ficha.");
+      toast.info("Foto removida.");
     }
     setG((prev) => (prev ? { ...prev, fotos: prev.fotos.filter((x) => x !== p) } : prev));
   }
@@ -287,8 +281,9 @@ function Ficha() {
         <Link to="/admin" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground"><ArrowLeft className="h-4 w-4" aria-hidden /> Voltar</Link>
         <div className="flex flex-wrap gap-2">
           <button onClick={excluir} className="inline-flex items-center gap-2 rounded-md border border-border px-3 py-2 text-sm text-destructive hover:border-destructive"><Trash2 className="h-4 w-4" aria-hidden />Excluir</button>
-          <button onClick={salvar} disabled={saving || enviando} className="inline-flex items-center gap-2 rounded-md bg-secondary px-4 py-2 text-sm font-bold hover:brightness-125"><Save className="h-4 w-4" aria-hidden />{saving ? "Salvando…" : "Salvar"}</button>
-          <button onClick={async () => { if (await salvar()) navigate({ to: "/admin/$id/orcamento", params: { id } }); }} className="inline-flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-bold text-primary-foreground hover:brightness-110"><FileText className="h-4 w-4" aria-hidden />Gerar Orçamento</button>
+          <span role="status" aria-live="polite" className={`self-center text-xs font-semibold ${status === "erro" ? "text-destructive" : status === "offline" ? "text-primary" : "text-muted-foreground"}`}>{{ salvo: "Salvo", pendente: "Alterações pendentes…", salvando: "Salvando…", erro: "Erro ao salvar — tentaremos de novo", offline: "Sem internet — guardado neste aparelho" }[status]}</span>
+          <button onClick={() => salvar(true)} disabled={saving || enviando} className="inline-flex items-center gap-2 rounded-md bg-secondary px-4 py-2 text-sm font-bold hover:brightness-125"><Save className="h-4 w-4" aria-hidden />{saving ? "Salvando…" : "Salvar"}</button>
+          <button onClick={async () => { if (await salvar(true)) navigate({ to: "/admin/$id/orcamento", params: { id } }); }} className="inline-flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-bold text-primary-foreground hover:brightness-110"><FileText className="h-4 w-4" aria-hidden />Gerar Orçamento</button>
         </div>
       </div>
 
