@@ -15,6 +15,13 @@
       "when": 1792381421512,
       "tag": "0001_portal_cliente",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1792381927851,
+      "tag": "0002_foto_capa",
+      "breakpoints": true
     }
   ]
 }
