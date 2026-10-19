@@ -16,6 +16,7 @@ export type Database = {
     Tables: {
       empreendimentos: {
         Row: {
+          atualizacoes: string
           cidade: string
           cliente: Json
           created_at: string
@@ -23,15 +24,18 @@ export type Database = {
           dados: Json
           endereco: string
           etapa: string
+          ficha_publica: string
           fotos: string[]
           id: string
           prazo: string | null
           publicado: boolean
+          senha_hash: string | null
           status: string
           titulo: string
           updated_at: string
         }
         Insert: {
+          atualizacoes?: string
           cidade?: string
           cliente?: Json
           created_at?: string
@@ -39,15 +43,18 @@ export type Database = {
           dados?: Json
           endereco?: string
           etapa?: string
+          ficha_publica?: string
           fotos?: string[]
           id?: string
           prazo?: string | null
           publicado?: boolean
+          senha_hash?: string | null
           status?: string
           titulo?: string
           updated_at?: string
         }
         Update: {
+          atualizacoes?: string
           cidade?: string
           cliente?: Json
           created_at?: string
@@ -55,15 +62,85 @@ export type Database = {
           dados?: Json
           endereco?: string
           etapa?: string
+          ficha_publica?: string
           fotos?: string[]
           id?: string
           prazo?: string | null
           publicado?: boolean
+          senha_hash?: string | null
           status?: string
           titulo?: string
           updated_at?: string
         }
         Relationships: []
+      }
+      portal_tentativas: {
+        Row: {
+          chave: string
+          created_at: string
+          id: number
+        }
+        Insert: {
+          chave: string
+          created_at?: string
+          id?: number
+        }
+        Update: {
+          chave?: string
+          created_at?: string
+          id?: number
+        }
+        Relationships: []
+      }
+      unidades: {
+        Row: {
+          atualizacoes: string
+          conclusao: string | null
+          created_at: string
+          empreendimento_id: string
+          fotos: string[]
+          id: string
+          identificador: string
+          inicio: string | null
+          senha_hash: string | null
+          servicos: string
+          updated_at: string
+        }
+        Insert: {
+          atualizacoes?: string
+          conclusao?: string | null
+          created_at?: string
+          empreendimento_id: string
+          fotos?: string[]
+          id?: string
+          identificador?: string
+          inicio?: string | null
+          senha_hash?: string | null
+          servicos?: string
+          updated_at?: string
+        }
+        Update: {
+          atualizacoes?: string
+          conclusao?: string | null
+          created_at?: string
+          empreendimento_id?: string
+          fotos?: string[]
+          id?: string
+          identificador?: string
+          inicio?: string | null
+          senha_hash?: string | null
+          servicos?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "unidades_empreendimento_id_fkey"
+            columns: ["empreendimento_id"]
+            isOneToOne: false
+            referencedRelation: "empreendimentos"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_roles: {
         Row: {
@@ -89,6 +166,14 @@ export type Database = {
     }
     Functions: {
       admin_exists: { Args: never; Returns: boolean }
+      definir_senha_obra: {
+        Args: { _id: string; _senha: string }
+        Returns: undefined
+      }
+      definir_senha_unidade: {
+        Args: { _id: string; _senha: string }
+        Returns: undefined
+      }
       foto_publicada: { Args: { _path: string }; Returns: boolean }
       has_role: {
         Args: {
@@ -109,6 +194,14 @@ export type Database = {
           status: string
           titulo: string
         }[]
+      }
+      portal_obra: {
+        Args: { _id: string; _ip: string; _senha: string }
+        Returns: Json
+      }
+      portal_unidade: {
+        Args: { _ip: string; _obra: string; _senha: string; _unidade: string }
+        Returns: Json
       }
     }
     Enums: {
