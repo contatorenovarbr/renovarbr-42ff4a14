@@ -9,7 +9,7 @@ export function ObraAtual({ obra, urls }: { obra: ObraPublica; urls: Record<stri
       {obra.fotos.length > 0 && (
         <div className="flex snap-x snap-mandatory gap-3 overflow-x-auto p-3" aria-label={`Fotos de ${obra.titulo}`} tabIndex={0}>
           {obra.fotos.map((path, i) => (
-            <figure key={path} className="min-w-0 shrink-0 basis-[88%] snap-start overflow-hidden rounded-md sm:basis-[48%] lg:basis-[calc((100%-1.5rem)/3)]">
+            <figure key={path} className={`min-w-0 shrink-0 snap-start overflow-hidden rounded-md ${obra.fotos.length === 1 ? "basis-full" : obra.fotos.length === 2 ? "basis-[88%] sm:basis-[calc((100%-0.75rem)/2)]" : "basis-[88%] sm:basis-[48%] lg:basis-[calc((100%-1.5rem)/3)]"}`}>
               {urls[path] ? <img src={urls[path]} alt={`Foto ${i + 1} da obra ${obra.titulo}`} loading="lazy" className="h-64 w-full object-cover md:h-80" /> : <div className="h-64 animate-pulse bg-secondary md:h-80" aria-label="Carregando foto" />}
             </figure>
           ))}
