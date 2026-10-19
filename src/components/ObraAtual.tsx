@@ -1,9 +1,13 @@
-import { CalendarDays, MapPin, Palmtree } from "lucide-react";
+import { useState } from "react";
+import { CalendarDays, Lock, MapPin, Palmtree } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { PortalObra } from "./PortalObra";
 import { ferias } from "@/data/obra";
 import { prazoEntrega, type ObraPublica } from "@/lib/obras-publicas";
 import { Countdown } from "./Countdown";
 
 export function ObraAtual({ obra, urls }: { obra: ObraPublica; urls: Record<string, string> }) {
+  const [portal, setPortal] = useState(false);
   return (
     <article className="h-full overflow-hidden rounded-lg border border-primary/30 bg-card">
       {obra.fotos.length > 0 && (
@@ -26,6 +30,8 @@ export function ObraAtual({ obra, urls }: { obra: ObraPublica; urls: Record<stri
           </span>
           <h3 className="mt-4 break-words font-display text-2xl font-black uppercase md:text-3xl">{obra.titulo}</h3>
           {(obra.endereco || obra.cidade) && <p className="mt-4 flex items-start gap-2 text-sm font-semibold leading-relaxed"><MapPin className="mt-1 h-4 w-4 shrink-0 text-primary" aria-hidden /><span className="min-w-0 break-words">{[obra.endereco, obra.cidade && `${obra.cidade}/SC`].filter(Boolean).join(" — ")}</span></p>}
+          <Button onClick={() => setPortal(true)} className="mt-5 font-bold"><Lock aria-hidden />Área do cliente</Button>
+          <PortalObra id={obra.id} titulo={obra.titulo} open={portal} onOpenChange={setPortal} />
           {obra.etapa && <div className="mt-6"><p className="text-sm font-semibold">{obra.etapa}</p><div className="mt-3 h-2 overflow-hidden rounded-full bg-secondary" aria-hidden><div className="h-full w-1/3 animate-indeterminate rounded-full bg-primary motion-reduce:animate-none" /></div></div>}
         </div>
         <div className="min-w-0 self-end">

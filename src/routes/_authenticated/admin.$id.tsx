@@ -3,6 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { ArrowLeft, FileText, ImagePlus, Plus, Save, Trash2, X } from "lucide-react";
 import { toast } from "sonner";
+import { SenhaAdmin, Unidades } from "@/components/admin/Unidades";
 import { cidadesAtendidas } from "@/data/cidades";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -20,7 +21,7 @@ export const Route = createFileRoute("/_authenticated/admin/$id")({ head: () => 
   { name: "robots", content: "noindex, nofollow" },
 ] }), component: Ficha });
 
-type Geral = { titulo: string; cidade: string; endereco: string; status: string; etapa: string; prazo: string; publicado: boolean; fotos: string[] };
+type Geral = { titulo: string; cidade: string; endereco: string; status: string; etapa: string; prazo: string; publicado: boolean; fotos: string[]; ficha_publica: string; atualizacoes: string };
 
 const CIDADES = [...cidadesAtendidas, "Outra"];
 const STATUS = ["Orçamento", "Aguardando aprovação", "Aprovado", "Em andamento", "Acabamento e finalização", "Concluída"];
@@ -81,7 +82,7 @@ function Ficha() {
 
   useEffect(() => {
     if (!data) return;
-    setG({ titulo: data.titulo, cidade: data.cidade, endereco: data.endereco, status: data.status, etapa: data.etapa, prazo: data.prazo ?? "", publicado: data.publicado, fotos: data.fotos });
+    setG({ titulo: data.titulo, cidade: data.cidade, endereco: data.endereco, status: data.status, etapa: data.etapa, prazo: data.prazo ?? "", publicado: data.publicado, fotos: data.fotos, ficha_publica: data.ficha_publica, atualizacoes: data.atualizacoes });
     setC({ ...clienteVazio, ...(data.cliente as Partial<Cliente>) });
     setD({ ...dadosVazios, ...(data.dados as Partial<Dados>) });
     const kk = data.custos as Partial<Custos>;
@@ -335,6 +336,17 @@ function Ficha() {
                   <input type="file" accept="image/*" multiple disabled={enviando} className="sr-only" onChange={(e) => { const fs = Array.from(e.target.files ?? []); e.target.value = ""; void upload(fs); }} />
                 </label>
               </div>
+            </div>
+          </Sec>
+
+          <Sec n={9} title="Área do cliente (protegida por senha)">
+            <p className="mb-4 text-sm text-muted-foreground">O cliente abre esta área pelo card no site e digita a senha do empreendimento. Cada unidade tem a própria senha: a senha do empreendimento não abre as unidades. As senhas são guardadas de forma criptografada e não podem ser lidas, só trocadas.</p>
+            <div className="grid gap-4">
+              <SenhaAdmin rpc="definir_senha_obra" id={id} temSenha={!!data.senha_hash} label="Senha do empreendimento" />
+              <F label="Informações gerais para o cliente (aparecem após a senha)"><textarea rows={3} className={inp} value={g.ficha_publica} onChange={(e) => setGe({ ficha_publica: e.target.value })} /></F>
+              <F label="Atualizações da obra (aparecem após a senha)"><textarea rows={3} className={inp} value={g.atualizacoes} onChange={(e) => setGe({ atualizacoes: e.target.value })} /></F>
+              <p className="text-xs text-muted-foreground">Informações e atualizações são gravadas ao clicar em Salvar. Unidades têm botão próprio.</p>
+              <div><p className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Unidades</p><Unidades obraId={id} /></div>
             </div>
           </Sec>
         </div>

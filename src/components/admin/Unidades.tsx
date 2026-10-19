@@ -13,19 +13,18 @@ const lbl = "block text-xs font-semibold uppercase tracking-wider text-muted-for
 export function SenhaAdmin({ rpc, id, temSenha, label }: { rpc: "definir_senha_obra" | "definir_senha_unidade"; id: string; temSenha: boolean; label: string }) {
   const [s, setS] = useState("");
   const [busy, setBusy] = useState(false);
+  const [definida, setDefinida] = useState(temSenha);
   async function salvar() {
     if (s.length < 6) { toast.error("A senha precisa ter pelo menos 6 caracteres."); return; }
     setBusy(true);
     const { error } = await supabase.rpc(rpc, { _id: id, _senha: s });
     setBusy(false);
     if (error) { toast.error(`Não foi possível definir a senha: ${error.message}`); return; }
-    setS(""); toast.success("Senha definida."); onDone?.();
+    setS(""); setDefinida(true); toast.success("Senha definida.");
   }
-  const qc = useQueryClient();
-  const onDone = () => { qc.invalidateQueries({ queryKey: ["empreendimento", id] }); qc.invalidateQueries({ queryKey: ["unidades"] }); };
   return (
     <div>
-      <span className={lbl}>{label} <span className="normal-case tracking-normal">({temSenha ? "definida — digite para trocar" : "ainda não definida"})</span></span>
+      <span className={lbl}>{label} <span className="normal-case tracking-normal">({definida ? "definida — digite para trocar" : "ainda não definida"})</span></span>
       <div className="mt-1 flex gap-2">
         <input type="password" autoComplete="new-password" className={inp} placeholder="Nova senha (mín. 6)" value={s} onChange={(e) => setS(e.target.value)} />
         <button type="button" onClick={salvar} disabled={busy || !s} className="inline-flex shrink-0 items-center gap-1 rounded-md bg-secondary px-3 text-sm font-bold disabled:opacity-50"><KeyRound className="h-4 w-4" aria-hidden />{busy ? "…" : "Definir"}</button>
