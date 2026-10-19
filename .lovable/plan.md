@@ -1,22 +1,56 @@
-# Auditoria Renovar BR — estado atual
+# Auditoria Renovar BR (somente leitura)
 
-Conferido nos arquivos agora. Os quatro pedidos **já estão feitos**:
+**Como foi verificado:** li o código dos arquivos e rodei os testes que já existem (todos passaram). Desta vez **não abri o site** no navegador: nada foi testado clicando de verdade. Nada foi alterado, nem no banco nem nos acessos.
 
-1. **Obra repetida** — resolvido. A página inicial tem um só carrossel, que mostra as obras cadastradas. A obra atual não está mais escrita direto no site. O contador do prazo de entrega fica em cada card e o das férias (24/12/2026) fica abaixo do carrossel.
-2. **Foto/seção do responsável** — já foi retirada da página. Resta apenas o registro do arquivo da foto, que nenhuma tela usa.
-3. **"Já sou cliente" + Itajaí** — o botão leva às obras com rolagem suave (ela é desligada para quem pede menos movimento). Itajaí aparece na lista de cidades, no texto do topo, na descrição para o Google, no rodapé e no PDF do orçamento.
-4. **Carrossel com pesquisa** — consulta as obras publicadas de verdade no banco. A pesquisa ignora acentos e busca por nome, cidade e endereço. As obras em andamento aparecem primeiro e não há obras repetidas.
+## 1. Página inicial — as 4 mudanças estão no código
+- **Obra repetida resolvida:** existe só um carrossel, que mostra as obras cadastradas. A obra não está mais escrita direto na página. O contador de entrega fica em cada card e o das férias fica abaixo do carrossel.
+- **Foto do responsável:** não aparece em nenhuma tela. Sobrou só o registro do arquivo, sem uso.
+- **"Já sou cliente":** leva às obras com rolagem suave. Itajaí aparece na lista de cidades, no texto do topo, na descrição para o Google, no rodapé e no PDF.
+- **Pesquisa:** busca nas obras publicadas de verdade, por nome, cidade e endereço, sem diferenciar acentos. As obras em andamento aparecem primeiro e não há repetição.
 
-## Menor conjunto de mudanças restante (opcional)
-- Apagar o registro da foto do responsável, que não é usado (1 arquivo, sem efeito visual).
-- Atualizar a lista de cidades nas regras guardadas do projeto, incluindo Itajaí (só anotação, nada no site).
-- Fora isso, não há mais nada para mudar no site.
+## 2. Área administrativa
+- **Criar:** o botão "Novo empreendimento" cria a obra e abre a ficha.
+- **Editar:** o botão Salvar grava todos os dados.
+- **Excluir:** pede confirmação e apaga as fotos e o cadastro.
+- **Mostrar ou tirar do site:** dá para fazer pelo card da obra ou pela opção na ficha.
+- **Acesso:** a área só abre com login, e só o administrador consegue ler ou gravar os cadastros.
 
-## Riscos e dependências
-- O card da obra só aparece se a obra estiver marcada "mostrar no site" na área administrativa. Se for desmarcada, o carrossel mostra "Nenhuma obra publicada".
-- O prazo de 20/10/2026 vence amanhã. Depois disso, o contador mostra "Prazo de entrega atingido" até você mudar a data no cadastro.
-- Os links das fotos são renovados a cada 30 minutos. Isso funciona, mas depende do banco estar no ar.
-- Nada será alterado no banco, nos acessos, nos cálculos nem no PDF.
+## 3. Ficha técnica
+- **Blocos:** cliente, empreendimento, mão de obra, materiais, equipamentos, outros custos, prazos e condições, e card do site.
+- **Resumo:** um painel mostra o custo total, o lucro oculto, os impostos, o preço final e o preço por m².
+- **Problema no celular:** nas listas de mão de obra, materiais e equipamentos, os títulos das colunas (Unidade, Quantidade, Valor por unidade, Dias) somem. Ficam caixas sem nome, e não dá para saber qual é a quantidade e qual é o preço.
+
+## 4. Fotos
+- **Proteção:** as fotos ficam guardadas em área privada. Quem visita o site só vê fotos de obras publicadas, por links que expiram em 1 hora. Os dados do cliente e os valores nunca vão para a página pública.
+- **Risco 1:** remover uma foto apaga o arquivo na hora, antes de salvar. Se você sair sem salvar, o cadastro continua apontando para uma foto que não existe mais, e o site mostra um espaço vazio.
+- **Risco 2:** se você enviar uma foto e sair sem salvar, o arquivo fica guardado sem uso.
+- **Avisos:** não há aviso quando a foto passa de 10 MB, nem quando a exclusão da obra falha.
+
+## 5. Orçamento em PDF
+- **Cálculo:**
+  - custo = mão de obra + materiais + equipamentos + outros;
+  - preço antes dos impostos = custo × (1 + lucro%);
+  - preço com impostos = preço antes dos impostos ÷ (1 − impostos%);
+  - total = preço com impostos − desconto.
+- **Valores das linhas:** o lucro e os impostos ficam embutidos proporcionalmente em cada linha, e o lucro não aparece para o cliente.
+- **Como sai o PDF:** pela janela de impressão do navegador ("Salvar como PDF"). Não foi testado na prática.
+- **Pontos de atenção:**
+  - o desconto é tirado depois dos impostos, então o valor de impostos mostrado na ficha não diminui com o desconto;
+  - a soma das linhas pode diferir do total em alguns centavos, por causa do arredondamento.
+
+## 6. Testes e falhas prováveis
+- **Testes que existem:** cálculo do orçamento, pesquisa e cidades, e endereços do site. Todos passaram.
+- **Sem teste:** login, salvar a ficha, fotos e PDF.
+- **Prazo:** a entrega de 20/10/2026 é amanhã. Depois disso, o card mostra "Prazo de entrega atingido" até a data ser alterada no cadastro.
+
+## Correções sugeridas, por prioridade (menor mudança)
+1. Remoção de fotos: só apagar o arquivo depois de Salvar, ou salvar a ficha logo após enviar ou remover uma foto (1 arquivo).
+2. Celular: mostrar o nome de cada campo nas listas de mão de obra, materiais e equipamentos (1 arquivo).
+3. Mostrar uma mensagem de erro quando a exclusão falhar, e avisar quando a foto passar de 10 MB (1 arquivo).
+4. Opcional: deixar explícito na ficha que o desconto é aplicado depois dos impostos, e acertar os centavos na última linha do PDF.
+5. Opcional: apagar o registro da foto do responsável que não é usado.
+
+Nenhuma delas muda o banco, os acessos ou as fórmulas.
 
 ## GitHub
-Eu não consigo ver se o GitHub está conectado. Confira em Configurações do projeto → Git → Check status.
+Eu não consigo ver se o GitHub está conectado. Confira em Configurações do projeto → Git.
