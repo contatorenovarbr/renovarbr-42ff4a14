@@ -156,7 +156,7 @@ function Ficha() {
       const { error } = await supabase.from("empreendimentos").update({
         ...e.g, prazo: e.g.prazo || null, cliente: e.c, dados: e.d, custos: e.k, updated_at: new Date().toISOString(),
       } as never).eq("id", id);
-      if (error) { setStatus("erro"); if (manual) toast.error(`Erro ao salvar a ficha: ${error.message}`); return false; }
+      if (error) { setStatus("erro"); clearTimeout(timer.current); timer.current = setTimeout(() => { void salvarRef.current(); }, 8000); if (manual) toast.error(`Erro ao salvar a ficha: ${error.message}`); return false; }
       ultimoSalvo.current = snap;
       const atual = estadoRef.current ? JSON.stringify(estadoRef.current) : snap;
       if (atual === snap) { apagarRascunho(chave); setStatus("salvo"); }
