@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 import { ArrowLeft, FileText, ImagePlus, Plus, Save, Trash2, X } from "lucide-react";
 import { toast } from "sonner";
 import { SenhaAdmin, Unidades } from "@/components/admin/Unidades";
+import { apagarRascunho, chaveRascunho, gravarRascunho, lerRascunho, rascunhoMaisNovo } from "@/lib/rascunho";
 import { cidadesAtendidas } from "@/data/cidades";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -49,6 +50,8 @@ function C({ label, children }: { label: string; children: ReactNode }) {
 
 function Ficha() {
   const { id } = Route.useParams();
+  const { user } = Route.useRouteContext();
+  const chave = chaveRascunho(user.id, id);
   const qc = useQueryClient();
   const navigate = useNavigate();
   const { data, isLoading } = useQuery({
@@ -58,6 +61,8 @@ function Ficha() {
       if (error) throw error;
       return data;
     },
+    // Never refetch on focus: returning from another app must not reset the form.
+    refetchOnWindowFocus: false,
   });
 
   const [g, setG] = useState<Geral | null>(null);
@@ -71,23 +76,58 @@ function Ficha() {
   const [pendRemove, setPendRemove] = useState<string[]>([]);
   // Photos uploaded but not yet saved; cleaned up if the admin leaves without saving.
   const novasRef = useRef<string[]>([]);
+  type Estado = { g: Geral; c: Cliente; d: Dados; k: Custos };
+  const [status, setStatus] = useState<"salvo" | "pendente" | "salvando" | "erro" | "offline">("salvo");
+  const iniciado = useRef(false);
+  const ultimoSalvo = useRef("");
+  const estadoRef = useRef<Estado | null>(null);
+  const salvarRef = useRef<(manual?: boolean) => Promise<boolean>>(async () => false);
+  const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  estadoRef.current = g ? { g, c, d, k } : null;
+
+  // Initialize once from the database; a newer local draft (unsaved edits) takes precedence.
   useEffect(() => {
-    const aviso = (e: BeforeUnloadEvent) => { if (novasRef.current.length) e.preventDefault(); };
-    window.addEventListener("beforeunload", aviso);
-    return () => {
-      window.removeEventListener("beforeunload", aviso);
-      if (novasRef.current.length) { void supabase.storage.from("obras").remove(novasRef.current); novasRef.current = []; }
+    if (!data || iniciado.current) return;
+    iniciado.current = true;
+    const base: Estado = {
+      g: { titulo: data.titulo, cidade: data.cidade, endereco: data.endereco, status: data.status, etapa: data.etapa, prazo: data.prazo ?? "", publicado: data.publicado, fotos: data.fotos, foto_capa: data.foto_capa, ficha_publica: data.ficha_publica, atualizacoes: data.atualizacoes },
+      c: { ...clienteVazio, ...(data.cliente as Partial<Cliente>) },
+      d: { ...dadosVazios, ...(data.dados as Partial<Dados>) },
+      k: (() => { const kk = data.custos as Partial<Custos>; return { ...custosVazios, ...kk, outros: { ...custosVazios.outros, ...(kk.outros ?? {}) } }; })(),
     };
+    ultimoSalvo.current = JSON.stringify(base);
+    const r = lerRascunho<Estado>(chave);
+    const e = rascunhoMaisNovo(r, data.updated_at) && r!.estado.g ? { ...base, ...r!.estado, g: { ...base.g, ...r!.estado.g } } : base;
+    if (e !== base) toast.info("Recuperamos as alterações que ainda não tinham sido salvas.");
+    else if (r) apagarRascunho(chave);
+    setG(e.g); setC(e.c); setD(e.d); setK(e.k);
+  }, [data, chave]);
+
+  // Every change: backup locally right away, then save to the database after a short pause.
+  useEffect(() => {
+    if (!iniciado.current || !g) return;
+    const snap = JSON.stringify({ g, c, d, k });
+    if (snap === ultimoSalvo.current) { apagarRascunho(chave); setStatus("salvo"); return; }
+    gravarRascunho(chave, { g, c, d, k });
+    setStatus(navigator.onLine ? "pendente" : "offline");
+    clearTimeout(timer.current);
+    timer.current = setTimeout(() => { void salvarRef.current(); }, 1200);
+    return () => clearTimeout(timer.current);
+  }, [g, c, d, k, chave]);
+
+  // Flush when the app goes to background and resync when the connection returns.
+  useEffect(() => {
+    const flush = () => {
+      const e = estadoRef.current;
+      if (e && JSON.stringify(e) !== ultimoSalvo.current) { clearTimeout(timer.current); void salvarRef.current(); }
+    };
+    const vis = () => { if (document.visibilityState === "hidden") flush(); };
+    document.addEventListener("visibilitychange", vis);
+    window.addEventListener("pagehide", flush);
+    window.addEventListener("online", flush);
+    return () => { document.removeEventListener("visibilitychange", vis); window.removeEventListener("pagehide", flush); window.removeEventListener("online", flush); };
   }, []);
 
-  useEffect(() => {
-    if (!data) return;
-    setG({ titulo: data.titulo, cidade: data.cidade, endereco: data.endereco, status: data.status, etapa: data.etapa, prazo: data.prazo ?? "", publicado: data.publicado, fotos: data.fotos, foto_capa: data.foto_capa, ficha_publica: data.ficha_publica, atualizacoes: data.atualizacoes });
-    setC({ ...clienteVazio, ...(data.cliente as Partial<Cliente>) });
-    setD({ ...dadosVazios, ...(data.dados as Partial<Dados>) });
-    const kk = data.custos as Partial<Custos>;
-    setK({ ...custosVazios, ...kk, outros: { ...custosVazios.outros, ...(kk.outros ?? {}) } });
-  }, [data]);
 
   useEffect(() => {
     const todas = [...(g?.fotos ?? []), ...(g?.foto_capa ? [g.foto_capa] : [])];
@@ -105,31 +145,43 @@ function Ficha() {
   const t = calcular(k);
   const setGe = (p: Partial<Geral>) => setG({ ...g, ...p });
 
-  async function salvar() {
-    setSaving(true);
+  async function salvar(manual = false) {
+    const e = estadoRef.current;
+    if (!e) return false;
+    const snap = JSON.stringify(e);
+    if (!navigator.onLine) { setStatus("offline"); if (manual) toast.error("Sem internet. As alterações ficam guardadas neste aparelho e serão salvas quando a conexão voltar."); return false; }
+    setSaving(true); setStatus("salvando");
     try {
+      // Update by id only: never creates a new record.
       const { error } = await supabase.from("empreendimentos").update({
-        ...g!, prazo: g!.prazo || null, cliente: c, dados: d, custos: k, updated_at: new Date().toISOString(),
+        ...e.g, prazo: e.g.prazo || null, cliente: e.c, dados: e.d, custos: e.k, updated_at: new Date().toISOString(),
       } as never).eq("id", id);
-      if (error) { toast.error(`Erro ao salvar a ficha: ${error.message}`); return false; }
+      if (error) { setStatus("erro"); clearTimeout(timer.current); timer.current = setTimeout(() => { void salvarRef.current(); }, 8000); if (manual) toast.error(`Erro ao salvar a ficha: ${error.message}`); return false; }
+      ultimoSalvo.current = snap;
+      const atual = estadoRef.current ? JSON.stringify(estadoRef.current) : snap;
+      if (atual === snap) { apagarRascunho(chave); setStatus("salvo"); }
+      else { setStatus("pendente"); clearTimeout(timer.current); timer.current = setTimeout(() => { void salvarRef.current(); }, 1200); }
       novasRef.current = [];
       if (pendRemove.length) {
         const { error: e2 } = await supabase.storage.from("obras").remove(pendRemove);
         if (e2) toast.warning("Ficha salva, mas algumas fotos removidas não puderam ser apagadas do armazenamento.");
         setPendRemove([]);
       }
-      toast.success("Ficha salva.");
+      if (manual) toast.success("Ficha salva.");
       qc.invalidateQueries({ queryKey: ["empreendimentos"] });
       qc.invalidateQueries({ queryKey: ["empreendimento", id] });
       qc.invalidateQueries({ queryKey: ["obras-publicas"] });
       return true;
-    } catch (e) {
-      toast.error(`Erro ao salvar a ficha: ${e instanceof Error ? e.message : "falha de conexão"}`);
+    } catch (err) {
+      setStatus(navigator.onLine ? "erro" : "offline");
+      if (manual) toast.error(`Erro ao salvar a ficha: ${err instanceof Error ? err.message : "falha de conexão"}`);
       return false;
     } finally {
       setSaving(false);
     }
   }
+
+  salvarRef.current = salvar;
 
   async function excluir() {
     if (!confirm("Excluir este empreendimento e todas as fotos dele? Essa ação não pode ser desfeita.")) return;
@@ -172,7 +224,7 @@ function Ficha() {
     if (novas.length) {
       novasRef.current = [...novasRef.current, ...novas];
       setG((prev) => (prev ? { ...prev, fotos: [...prev.fotos, ...novas] } : prev));
-      toast.success("Foto enviada. Clique em Salvar para manter.");
+      toast.success("Foto enviada. Será salva automaticamente.");
     }
   }
 
@@ -189,7 +241,7 @@ function Ficha() {
       if (antiga) await removerCapa(true);
       novasRef.current = [...novasRef.current, path];
       setG((prev) => (prev ? { ...prev, foto_capa: path } : prev));
-      toast.success("Foto principal enviada. Clique em Salvar para manter.");
+      toast.success("Foto principal enviada. Será salva automaticamente.");
     } catch (e) {
       toast.error(`Falha ao enviar foto: ${e instanceof Error ? e.message : "falha de conexão"}`);
     } finally {
@@ -205,7 +257,7 @@ function Ficha() {
       novasRef.current = novasRef.current.filter((x) => x !== p);
     } else {
       setPendRemove((r) => [...r, p]);
-      if (!silencioso) toast.info("A foto principal será apagada ao salvar a ficha.");
+      if (!silencioso) toast.info("Foto principal removida.");
     }
     setG((prev) => (prev ? { ...prev, foto_capa: null } : prev));
   }
@@ -218,7 +270,7 @@ function Ficha() {
       novasRef.current = novasRef.current.filter((x) => x !== p);
     } else {
       setPendRemove((r) => [...r, p]);
-      toast.info("A foto será apagada ao salvar a ficha.");
+      toast.info("Foto removida.");
     }
     setG((prev) => (prev ? { ...prev, fotos: prev.fotos.filter((x) => x !== p) } : prev));
   }
@@ -229,8 +281,9 @@ function Ficha() {
         <Link to="/admin" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground"><ArrowLeft className="h-4 w-4" aria-hidden /> Voltar</Link>
         <div className="flex flex-wrap gap-2">
           <button onClick={excluir} className="inline-flex items-center gap-2 rounded-md border border-border px-3 py-2 text-sm text-destructive hover:border-destructive"><Trash2 className="h-4 w-4" aria-hidden />Excluir</button>
-          <button onClick={salvar} disabled={saving || enviando} className="inline-flex items-center gap-2 rounded-md bg-secondary px-4 py-2 text-sm font-bold hover:brightness-125"><Save className="h-4 w-4" aria-hidden />{saving ? "Salvando…" : "Salvar"}</button>
-          <button onClick={async () => { if (await salvar()) navigate({ to: "/admin/$id/orcamento", params: { id } }); }} className="inline-flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-bold text-primary-foreground hover:brightness-110"><FileText className="h-4 w-4" aria-hidden />Gerar Orçamento</button>
+          <span role="status" aria-live="polite" className={`self-center text-xs font-semibold ${status === "erro" ? "text-destructive" : status === "offline" ? "text-primary" : "text-muted-foreground"}`}>{{ salvo: "Salvo", pendente: "Alterações pendentes…", salvando: "Salvando…", erro: "Erro ao salvar — tentaremos de novo", offline: "Sem internet — guardado neste aparelho" }[status]}</span>
+          <button onClick={() => salvar(true)} disabled={saving || enviando} className="inline-flex items-center gap-2 rounded-md bg-secondary px-4 py-2 text-sm font-bold hover:brightness-125"><Save className="h-4 w-4" aria-hidden />{saving ? "Salvando…" : "Salvar"}</button>
+          <button onClick={async () => { if (await salvar(true)) navigate({ to: "/admin/$id/orcamento", params: { id } }); }} className="inline-flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-bold text-primary-foreground hover:brightness-110"><FileText className="h-4 w-4" aria-hidden />Gerar Orçamento</button>
         </div>
       </div>
 

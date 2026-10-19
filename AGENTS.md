@@ -16,3 +16,4 @@
 - Service cities share src/data/cidades.ts across the homepage and administrative selection. Why: keep supported cities consistent.
 - Client portal passwords are bcrypt hashes checked only by service-role RPCs portal_obra/portal_unidade via src/lib/portal.functions.ts (attempt-limited, short signed URLs). Why: anonymous callers can never read private unit data or photos directly.
 - Unit photos live under obras/<obraId>/unidades/<unitId>/ and never in empreendimentos.fotos. Why: unit photos stay private and are never mixed with public ones.
+- The technical sheet initializes from the DB once, autosaves (debounced, update-by-id) and keeps a per-user localStorage draft via src/lib/rascunho.ts that wins only if newer than updated_at. Why: Android tab discards and focus refetches must never lose or overwrite edits.

@@ -14,3 +14,5 @@
 - [x] Ficha: rótulos visíveis no celular, erros claros, nota do desconto
 - [x] PDF: centavos das linhas batem com o total
 - [x] Área do cliente por obra e unidade com senhas seguras no servidor
+- [x] Ficha: salvamento automático com rascunho local e indicador de status
+- [ ] Google Search Console: publicar e concluir verificação + sitemap (aguarda aprovação de publicação)
