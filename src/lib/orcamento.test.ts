@@ -17,3 +17,12 @@ describe("orçamento", () => {
     expect(whatsappToEmail("+55 (47) 99795-3323")).toBe("5547997953323@admin.renovarbr.app");
   });
 });
+
+import { arredondarLinhas } from "./orcamento";
+describe("arredondarLinhas", () => {
+  it("as linhas do PDF somam exatamente o total", () => {
+    const l = arredondarLinhas([100 / 3, 100 / 3, 100 / 3], 100);
+    expect(l).toEqual([33.33, 33.33, 33.34]);
+    expect(l.reduce((s, v) => s + v, 0)).toBeCloseTo(100, 10);
+  });
+});

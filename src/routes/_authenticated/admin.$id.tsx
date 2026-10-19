@@ -150,12 +150,12 @@ function Ficha() {
     }
   }
 
-  async function upload(files: FileList | null) {
-    if (!files?.length) return;
+  async function upload(files: File[]) {
+    if (!files.length) return;
     setEnviando(true);
     const novas: string[] = [];
     try {
-      for (const f of Array.from(files)) {
+      for (const f of files) {
         if (!f.type.startsWith("image/")) { toast.error(`${f.name}: envie apenas imagens (JPG, PNG, WEBP…).`); continue; }
         if (f.size > MAX_FOTO) { toast.error(`${f.name}: a foto passa de 10 MB. Reduza o tamanho e tente de novo.`); continue; }
         const path = `${id}/${Date.now()}-${f.name.replace(/[^\w.-]/g, "_")}`;
@@ -332,7 +332,7 @@ function Ficha() {
                 ))}
                 <label className="flex h-28 cursor-pointer flex-col items-center justify-center gap-1 rounded-md border-2 border-dashed border-primary/40 text-sm text-muted-foreground hover:border-primary">
                   <ImagePlus className="h-6 w-6 text-primary" aria-hidden />{enviando ? "Enviando…" : "Adicionar fotos"}<span className="text-[0.65rem]">até 10 MB</span>
-                  <input type="file" accept="image/*" multiple disabled={enviando} className="sr-only" onChange={(e) => { void upload(e.target.files); e.target.value = ""; }} />
+                  <input type="file" accept="image/*" multiple disabled={enviando} className="sr-only" onChange={(e) => { const fs = Array.from(e.target.files ?? []); e.target.value = ""; void upload(fs); }} />
                 </label>
               </div>
             </div>
