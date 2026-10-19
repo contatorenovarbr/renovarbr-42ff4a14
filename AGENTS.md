@@ -14,3 +14,5 @@
 
 - Public projects use one RPC-fed carousel; ObraAtual renders a record, never static project data. Why: admin changes, publication and photo removals stay authoritative.
 - Service cities share src/data/cidades.ts across the homepage and administrative selection. Why: keep supported cities consistent.
+- Client portal passwords are bcrypt hashes checked only by service-role RPCs portal_obra/portal_unidade via src/lib/portal.functions.ts (attempt-limited, short signed URLs). Why: anonymous callers can never read private unit data or photos directly.
+- Unit photos live under obras/<obraId>/unidades/<unitId>/ and never in empreendimentos.fotos. Why: unit photos stay private and are never mixed with public ones.
