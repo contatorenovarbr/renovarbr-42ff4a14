@@ -13,4 +13,4 @@
 - [x] Fotos: remoção só ao salvar, limite 10 MB, limpeza de envios não salvos
 - [x] Ficha: rótulos visíveis no celular, erros claros, nota do desconto
 - [x] PDF: centavos das linhas batem com o total
-- [ ] Modal de condomínio com senhas por unidade (precisa de etapa segura no servidor)
+- [x] Área do cliente por obra e unidade com senhas seguras no servidor
