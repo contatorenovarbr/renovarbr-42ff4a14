@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { ArrowLeft, FileText, ImagePlus, Plus, Save, Trash2, X } from "lucide-react";
 import { toast } from "sonner";
 import { cidadesAtendidas } from "@/data/cidades";
@@ -40,6 +40,11 @@ function Sec({ n, title, children }: { n: number; title: string; children: React
   );
 }
 const num = (v: string) => (v === "" ? 0 : Number(v.replace(",", ".")) || 0);
+const MAX_FOTO = 10 * 1024 * 1024;
+// Visible label on mobile, screen-reader-only on desktop where the column headers show.
+function C({ label, children }: { label: string; children: ReactNode }) {
+  return <label className="block min-w-0"><span className="mb-1 block text-[0.7rem] font-semibold uppercase tracking-wider text-muted-foreground md:sr-only">{label}</span>{children}</label>;
+}
 
 function Ficha() {
   const { id } = Route.useParams();
@@ -60,6 +65,19 @@ function Ficha() {
   const [k, setK] = useState<Custos>(custosVazios);
   const [urls, setUrls] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
+  const [enviando, setEnviando] = useState(false);
+  // Photos removed in the form are only deleted from storage after a successful save.
+  const [pendRemove, setPendRemove] = useState<string[]>([]);
+  // Photos uploaded but not yet saved; cleaned up if the admin leaves without saving.
+  const novasRef = useRef<string[]>([]);
+  useEffect(() => {
+    const aviso = (e: BeforeUnloadEvent) => { if (novasRef.current.length) e.preventDefault(); };
+    window.addEventListener("beforeunload", aviso);
+    return () => {
+      window.removeEventListener("beforeunload", aviso);
+      if (novasRef.current.length) { void supabase.storage.from("obras").remove(novasRef.current); novasRef.current = []; }
+    };
+  }, []);
 
   useEffect(() => {
     if (!data) return;
@@ -87,41 +105,86 @@ function Ficha() {
 
   async function salvar() {
     setSaving(true);
-    const { error } = await supabase.from("empreendimentos").update({
-      ...g!, prazo: g!.prazo || null, cliente: c, dados: d, custos: k, updated_at: new Date().toISOString(),
-    } as never).eq("id", id);
-    setSaving(false);
-    if (error) { toast.error("Erro ao salvar."); return false; }
-    toast.success("Ficha salva.");
-    qc.invalidateQueries({ queryKey: ["empreendimentos"] });
-    qc.invalidateQueries({ queryKey: ["empreendimento", id] });
-    return true;
+    try {
+      const { error } = await supabase.from("empreendimentos").update({
+        ...g!, prazo: g!.prazo || null, cliente: c, dados: d, custos: k, updated_at: new Date().toISOString(),
+      } as never).eq("id", id);
+      if (error) { toast.error(`Erro ao salvar a ficha: ${error.message}`); return false; }
+      novasRef.current = [];
+      if (pendRemove.length) {
+        const { error: e2 } = await supabase.storage.from("obras").remove(pendRemove);
+        if (e2) toast.warning("Ficha salva, mas algumas fotos removidas não puderam ser apagadas do armazenamento.");
+        setPendRemove([]);
+      }
+      toast.success("Ficha salva.");
+      qc.invalidateQueries({ queryKey: ["empreendimentos"] });
+      qc.invalidateQueries({ queryKey: ["empreendimento", id] });
+      qc.invalidateQueries({ queryKey: ["obras-publicas"] });
+      return true;
+    } catch (e) {
+      toast.error(`Erro ao salvar a ficha: ${e instanceof Error ? e.message : "falha de conexão"}`);
+      return false;
+    } finally {
+      setSaving(false);
+    }
   }
 
   async function excluir() {
-    if (!confirm("Excluir este empreendimento? Essa ação não pode ser desfeita.")) return;
-    if (g!.fotos.length) await supabase.storage.from("obras").remove(g!.fotos);
-    await supabase.from("empreendimentos").delete().eq("id", id);
-    qc.invalidateQueries({ queryKey: ["empreendimentos"] });
-    navigate({ to: "/admin" });
+    if (!confirm("Excluir este empreendimento e todas as fotos dele? Essa ação não pode ser desfeita.")) return;
+    try {
+      // Delete the record first so a failure never leaves it pointing at missing photos.
+      const { error } = await supabase.from("empreendimentos").delete().eq("id", id);
+      if (error) { toast.error(`Não foi possível excluir: ${error.message}`); return; }
+      const arquivos = Array.from(new Set([...g!.fotos, ...pendRemove, ...novasRef.current]));
+      novasRef.current = [];
+      if (arquivos.length) {
+        const { error: e2 } = await supabase.storage.from("obras").remove(arquivos);
+        if (e2) toast.warning("Empreendimento excluído, mas algumas fotos não puderam ser apagadas do armazenamento.");
+      }
+      toast.success("Empreendimento excluído.");
+      qc.invalidateQueries({ queryKey: ["empreendimentos"] });
+      qc.invalidateQueries({ queryKey: ["obras-publicas"] });
+      navigate({ to: "/admin" });
+    } catch (e) {
+      toast.error(`Não foi possível excluir: ${e instanceof Error ? e.message : "falha de conexão"}`);
+    }
   }
 
   async function upload(files: FileList | null) {
-    if (!files) return;
+    if (!files?.length) return;
+    setEnviando(true);
     const novas: string[] = [];
-    for (const f of Array.from(files)) {
-      if (!f.type.startsWith("image/")) continue;
-      const path = `${id}/${Date.now()}-${f.name.replace(/[^\w.-]/g, "_")}`;
-      const { error } = await supabase.storage.from("obras").upload(path, f);
-      if (error) toast.error(`Falha ao enviar ${f.name}`); else novas.push(path);
+    try {
+      for (const f of Array.from(files)) {
+        if (!f.type.startsWith("image/")) { toast.error(`${f.name}: envie apenas imagens (JPG, PNG, WEBP…).`); continue; }
+        if (f.size > MAX_FOTO) { toast.error(`${f.name}: a foto passa de 10 MB. Reduza o tamanho e tente de novo.`); continue; }
+        const path = `${id}/${Date.now()}-${f.name.replace(/[^\w.-]/g, "_")}`;
+        const { error } = await supabase.storage.from("obras").upload(path, f);
+        if (error) toast.error(`Falha ao enviar ${f.name}: ${error.message}`); else novas.push(path);
+      }
+    } catch (e) {
+      toast.error(`Falha ao enviar fotos: ${e instanceof Error ? e.message : "falha de conexão"}`);
+    } finally {
+      setEnviando(false);
     }
-    setGe({ fotos: [...g!.fotos, ...novas] });
-    if (novas.length) toast.success("Foto enviada. Lembre de salvar a ficha.");
+    if (novas.length) {
+      novasRef.current = [...novasRef.current, ...novas];
+      setG((prev) => (prev ? { ...prev, fotos: [...prev.fotos, ...novas] } : prev));
+      toast.success("Foto enviada. Clique em Salvar para manter.");
+    }
   }
 
   async function removerFoto(p: string) {
-    await supabase.storage.from("obras").remove([p]);
-    setGe({ fotos: g!.fotos.filter((x) => x !== p) });
+    if (novasRef.current.includes(p)) {
+      // Never saved: safe to delete immediately.
+      const { error } = await supabase.storage.from("obras").remove([p]);
+      if (error) { toast.error(`Não foi possível remover a foto: ${error.message}`); return; }
+      novasRef.current = novasRef.current.filter((x) => x !== p);
+    } else {
+      setPendRemove((r) => [...r, p]);
+      toast.info("A foto será apagada ao salvar a ficha.");
+    }
+    setG((prev) => (prev ? { ...prev, fotos: prev.fotos.filter((x) => x !== p) } : prev));
   }
 
   return (
@@ -190,10 +253,10 @@ function Ficha() {
               onAdd={() => setK({ ...k, itens: [...k.itens, { id: uid(), descricao: "", unidade: "m²", quantidade: 0, maoObraUnit: 0 }] })}
               onRemove={(rid) => setK({ ...k, itens: k.itens.filter((x) => x.id !== rid) })}
               render={(r) => (<>
-                <input className={inp} placeholder="Ex.: Pintura interna 2 demãos" value={r.descricao} onChange={(e) => setK({ ...k, itens: k.itens.map((x) => x.id === r.id ? { ...x, descricao: e.target.value } : x) })} />
-                <select className={inp} value={r.unidade} onChange={(e) => setK({ ...k, itens: k.itens.map((x) => x.id === r.id ? { ...x, unidade: e.target.value } : x) })}>{UNIDADES.map((u) => <option key={u}>{u}</option>)}</select>
-                <input className={inp} inputMode="decimal" value={r.quantidade || ""} onChange={(e) => setK({ ...k, itens: k.itens.map((x) => x.id === r.id ? { ...x, quantidade: num(e.target.value) } : x) })} />
-                <input className={inp} inputMode="decimal" value={r.maoObraUnit || ""} onChange={(e) => setK({ ...k, itens: k.itens.map((x) => x.id === r.id ? { ...x, maoObraUnit: num(e.target.value) } : x) })} />
+                <C label="Serviço"><input className={inp} placeholder="Ex.: Pintura interna 2 demãos" value={r.descricao} onChange={(e) => setK({ ...k, itens: k.itens.map((x) => x.id === r.id ? { ...x, descricao: e.target.value } : x) })} /></C>
+                <C label="Unidade"><select className={inp} value={r.unidade} onChange={(e) => setK({ ...k, itens: k.itens.map((x) => x.id === r.id ? { ...x, unidade: e.target.value } : x) })}>{UNIDADES.map((u) => <option key={u}>{u}</option>)}</select></C>
+                <C label="Quantidade"><input className={inp} inputMode="decimal" value={r.quantidade || ""} onChange={(e) => setK({ ...k, itens: k.itens.map((x) => x.id === r.id ? { ...x, quantidade: num(e.target.value) } : x) })} /></C>
+                <C label="Mão de obra por unidade (R$)"><input className={inp} inputMode="decimal" value={r.maoObraUnit || ""} onChange={(e) => setK({ ...k, itens: k.itens.map((x) => x.id === r.id ? { ...x, maoObraUnit: num(e.target.value) } : x) })} /></C>
               </>)}
               total={brl(t.maoObra)}
             />
@@ -206,10 +269,10 @@ function Ficha() {
               onAdd={() => setK({ ...k, materiais: [...k.materiais, { id: uid(), descricao: "", unidade: "un", quantidade: 0, precoUnit: 0 }] })}
               onRemove={(rid) => setK({ ...k, materiais: k.materiais.filter((x) => x.id !== rid) })}
               render={(r) => (<>
-                <input className={inp} placeholder="Ex.: Tinta acrílica 18L" value={r.descricao} onChange={(e) => setK({ ...k, materiais: k.materiais.map((x) => x.id === r.id ? { ...x, descricao: e.target.value } : x) })} />
-                <input className={inp} value={r.unidade} onChange={(e) => setK({ ...k, materiais: k.materiais.map((x) => x.id === r.id ? { ...x, unidade: e.target.value } : x) })} />
-                <input className={inp} inputMode="decimal" value={r.quantidade || ""} onChange={(e) => setK({ ...k, materiais: k.materiais.map((x) => x.id === r.id ? { ...x, quantidade: num(e.target.value) } : x) })} />
-                <input className={inp} inputMode="decimal" value={r.precoUnit || ""} onChange={(e) => setK({ ...k, materiais: k.materiais.map((x) => x.id === r.id ? { ...x, precoUnit: num(e.target.value) } : x) })} />
+                <C label="Material"><input className={inp} placeholder="Ex.: Tinta acrílica 18L" value={r.descricao} onChange={(e) => setK({ ...k, materiais: k.materiais.map((x) => x.id === r.id ? { ...x, descricao: e.target.value } : x) })} /></C>
+                <C label="Unidade"><input className={inp} placeholder="un, lata, galão" value={r.unidade} onChange={(e) => setK({ ...k, materiais: k.materiais.map((x) => x.id === r.id ? { ...x, unidade: e.target.value } : x) })} /></C>
+                <C label="Quantidade"><input className={inp} inputMode="decimal" value={r.quantidade || ""} onChange={(e) => setK({ ...k, materiais: k.materiais.map((x) => x.id === r.id ? { ...x, quantidade: num(e.target.value) } : x) })} /></C>
+                <C label="Preço por unidade (R$)"><input className={inp} inputMode="decimal" value={r.precoUnit || ""} onChange={(e) => setK({ ...k, materiais: k.materiais.map((x) => x.id === r.id ? { ...x, precoUnit: num(e.target.value) } : x) })} /></C>
               </>)}
               total={brl(t.materiais)}
             />
@@ -222,9 +285,9 @@ function Ficha() {
               onAdd={() => setK({ ...k, equipamentos: [...k.equipamentos, { id: uid(), descricao: "", dias: 0, valorDia: 0 }] })}
               onRemove={(rid) => setK({ ...k, equipamentos: k.equipamentos.filter((x) => x.id !== rid) })}
               render={(r) => (<>
-                <input className={inp} placeholder="Ex.: Andaime, balancim" value={r.descricao} onChange={(e) => setK({ ...k, equipamentos: k.equipamentos.map((x) => x.id === r.id ? { ...x, descricao: e.target.value } : x) })} />
-                <input className={inp} inputMode="decimal" value={r.dias || ""} onChange={(e) => setK({ ...k, equipamentos: k.equipamentos.map((x) => x.id === r.id ? { ...x, dias: num(e.target.value) } : x) })} />
-                <input className={inp} inputMode="decimal" value={r.valorDia || ""} onChange={(e) => setK({ ...k, equipamentos: k.equipamentos.map((x) => x.id === r.id ? { ...x, valorDia: num(e.target.value) } : x) })} />
+                <C label="Equipamento"><input className={inp} placeholder="Ex.: Andaime, balancim" value={r.descricao} onChange={(e) => setK({ ...k, equipamentos: k.equipamentos.map((x) => x.id === r.id ? { ...x, descricao: e.target.value } : x) })} /></C>
+                <C label="Dias"><input className={inp} inputMode="decimal" value={r.dias || ""} onChange={(e) => setK({ ...k, equipamentos: k.equipamentos.map((x) => x.id === r.id ? { ...x, dias: num(e.target.value) } : x) })} /></C>
+                <C label="Valor por dia (R$)"><input className={inp} inputMode="decimal" value={r.valorDia || ""} onChange={(e) => setK({ ...k, equipamentos: k.equipamentos.map((x) => x.id === r.id ? { ...x, valorDia: num(e.target.value) } : x) })} /></C>
               </>)}
               total={brl(t.equipamentos)}
             />
@@ -291,6 +354,7 @@ function Ficha() {
               <F label="Impostos %"><input className={inp} inputMode="decimal" value={k.impostoPct || ""} onChange={(e) => setK({ ...k, impostoPct: num(e.target.value) })} /></F>
               <F label="Desconto (R$)" className="col-span-2"><input className={inp} inputMode="decimal" value={k.descontoValor || ""} onChange={(e) => setK({ ...k, descontoValor: num(e.target.value) })} /></F>
             </div>
+            <p className="mt-2 text-xs text-muted-foreground">O desconto é abatido do preço final, depois dos impostos. Os impostos abaixo são calculados antes do desconto.</p>
             <dl className="mt-4 space-y-2 text-sm">
               <Row k="Lucro (só você vê)" v={brl(t.lucro)} />
               <Row k="Impostos" v={brl(t.impostos)} />
