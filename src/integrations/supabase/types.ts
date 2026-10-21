@@ -130,6 +130,36 @@ export type Database = {
         }
         Relationships: []
       }
+      produtos: {
+        Row: {
+          created_at: string
+          id: string
+          nome: string
+          preco: number
+          quantidade: number
+          unidade: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          nome?: string
+          preco?: number
+          quantidade?: number
+          unidade?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          nome?: string
+          preco?: number
+          quantidade?: number
+          unidade?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       unidades: {
         Row: {
           atualizacoes: string

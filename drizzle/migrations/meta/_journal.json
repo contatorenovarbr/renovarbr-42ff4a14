@@ -29,6 +29,13 @@
       "when": 1792598252344,
       "tag": "0003_create_orcamentos",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1792598504185,
+      "tag": "0004_create_produtos",
+      "breakpoints": true
     }
   ]
 }
