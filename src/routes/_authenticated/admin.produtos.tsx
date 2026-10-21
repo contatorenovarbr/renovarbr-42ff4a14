@@ -4,7 +4,6 @@ import { useState } from "react";
 import { ArrowLeft, Plus, Save, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { brl } from "@/lib/orcamento";
 
 export const Route = createFileRoute("/_authenticated/admin/produtos")({ head: () => ({ meta: [
   { title: "Produtos e preços — Renovar BR" },
@@ -115,5 +114,3 @@ function Produtos() {
     </main>
   );
 }
-
-export { brl as _brlProdutos };
