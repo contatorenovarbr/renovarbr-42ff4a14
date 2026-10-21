@@ -23,6 +23,9 @@ export const Route = createFileRoute("/_authenticated/admin/$id")({ head: () => 
 ] }), component: Ficha });
 
 type Geral = { titulo: string; cidade: string; endereco: string; status: string; etapa: string; prazo: string; publicado: boolean; fotos: string[]; foto_capa: string | null; ficha_publica: string; atualizacoes: string };
+// Multiple independent budgets per enterprise; id null = legacy single budget stored in empreendimentos.custos.
+type Orc = { id: string | null; titulo: string; custos: Custos };
+type Produto = { id: string; nome: string; unidade: string; preco: number; quantidade: number };
 
 const CIDADES = [...cidadesAtendidas, "Outra"];
 const STATUS = ["Orçamento", "Aguardando aprovação", "Aprovado", "Em andamento", "Acabamento e finalização", "Concluída"];
@@ -47,6 +50,8 @@ const MAX_FOTO = 10 * 1024 * 1024;
 function C({ label, children }: { label: string; children: ReactNode }) {
   return <label className="block min-w-0"><span className="mb-1 block text-[0.7rem] font-semibold uppercase tracking-wider text-muted-foreground md:sr-only">{label}</span>{children}</label>;
 }
+
+const normalizaCustos = (kk: Partial<Custos>): Custos => ({ ...custosVazios, ...kk, outros: { ...custosVazios.outros, ...(kk.outros ?? {}) } });
 
 function Ficha() {
   const { id } = Route.useParams();
@@ -85,7 +90,6 @@ function Ficha() {
   const [g, setG] = useState<Geral | null>(null);
   const [c, setC] = useState<Cliente>(clienteVazio);
   const [d, setD] = useState<Dados>(dadosVazios);
-  // Multiple independent budgets per enterprise; id null = legacy single budget in empreendimentos.custos.
   const [orc, setOrc] = useState<Orc[]>([]);
   const [sel, setSel] = useState(0);
   const k = orc[sel]?.custos ?? custosVazios;
@@ -97,44 +101,47 @@ function Ficha() {
   const [pendRemove, setPendRemove] = useState<string[]>([]);
   // Photos uploaded but not yet saved; cleaned up if the admin leaves without saving.
   const novasRef = useRef<string[]>([]);
-  type Estado = { g: Geral; c: Cliente; d: Dados; k: Custos };
+  type Estado = { g: Geral; c: Cliente; d: Dados; orc: Orc[] };
   const [status, setStatus] = useState<"salvo" | "pendente" | "salvando" | "erro" | "offline">("salvo");
   const iniciado = useRef(false);
   const ultimoSalvo = useRef("");
   const estadoRef = useRef<Estado | null>(null);
   const salvarRef = useRef<(manual?: boolean) => Promise<boolean>>(async () => false);
   const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
-  estadoRef.current = g ? { g, c, d, k } : null;
+  estadoRef.current = g ? { g, c, d, orc } : null;
 
   // Initialize once from the database; a newer local draft (unsaved edits) takes precedence.
   useEffect(() => {
-    if (!data || iniciado.current) return;
+    if (!data || orcsDb === undefined || iniciado.current) return;
     iniciado.current = true;
     const base: Estado = {
       g: { titulo: data.titulo, cidade: data.cidade, endereco: data.endereco, status: data.status, etapa: data.etapa, prazo: data.prazo ?? "", publicado: data.publicado, fotos: data.fotos, foto_capa: data.foto_capa, ficha_publica: data.ficha_publica, atualizacoes: data.atualizacoes },
       c: { ...clienteVazio, ...(data.cliente as Partial<Cliente>) },
       d: { ...dadosVazios, ...(data.dados as Partial<Dados>) },
-      k: (() => { const kk = data.custos as Partial<Custos>; return { ...custosVazios, ...kk, outros: { ...custosVazios.outros, ...(kk.outros ?? {}) } }; })(),
+      orc: orcsDb.length
+        ? orcsDb.map((o) => ({ id: o.id, titulo: o.titulo, custos: normalizaCustos(o.custos as Partial<Custos>) }))
+        : [{ id: null, titulo: "Orçamento", custos: normalizaCustos(data.custos as Partial<Custos>) }],
     };
     ultimoSalvo.current = JSON.stringify(base);
     const r = lerRascunho<Estado>(chave);
-    const e = rascunhoMaisNovo(r, data.updated_at) && r!.estado.g ? { ...base, ...r!.estado, g: { ...base.g, ...r!.estado.g } } : base;
+    const valido = r && r.estado.g && Array.isArray(r.estado.orc);
+    const e = valido && rascunhoMaisNovo(r, data.updated_at) ? { ...base, ...r!.estado, g: { ...base.g, ...r!.estado.g } } : base;
     if (e !== base) toast.info("Recuperamos as alterações que ainda não tinham sido salvas.");
     else if (r) apagarRascunho(chave);
-    setG(e.g); setC(e.c); setD(e.d); setK(e.k);
-  }, [data, chave]);
+    setG(e.g); setC(e.c); setD(e.d); setOrc(e.orc);
+  }, [data, orcsDb, chave]);
 
   // Every change: backup locally right away, then save to the database after a short pause.
   useEffect(() => {
     if (!iniciado.current || !g) return;
-    const snap = JSON.stringify({ g, c, d, k });
+    const snap = JSON.stringify({ g, c, d, orc });
     if (snap === ultimoSalvo.current) { apagarRascunho(chave); setStatus("salvo"); return; }
-    gravarRascunho(chave, { g, c, d, k });
+    gravarRascunho(chave, { g, c, d, orc });
     setStatus(navigator.onLine ? "pendente" : "offline");
     clearTimeout(timer.current);
     timer.current = setTimeout(() => { void salvarRef.current(); }, 1200);
     return () => clearTimeout(timer.current);
-  }, [g, c, d, k, chave]);
+  }, [g, c, d, orc, chave]);
 
   // Flush when the app goes to background and resync when the connection returns.
   useEffect(() => {
@@ -148,7 +155,6 @@ function Ficha() {
     window.addEventListener("online", flush);
     return () => { document.removeEventListener("visibilitychange", vis); window.removeEventListener("pagehide", flush); window.removeEventListener("online", flush); };
   }, []);
-
 
   useEffect(() => {
     const todas = [...(g?.fotos ?? []), ...(g?.foto_capa ? [g.foto_capa] : [])];
@@ -165,6 +171,10 @@ function Ficha() {
 
   const t = calcular(k);
   const setGe = (p: Partial<Geral>) => setG({ ...g, ...p });
+  const rotuloOrc = (i: number) => {
+    const t = orc[i]?.titulo?.trim();
+    return `Orçamento ${i + 1}${t && t !== "Orçamento" ? ` — ${t}` : ""}`;
+  };
 
   async function salvar(manual = false) {
     const e = estadoRef.current;
@@ -174,10 +184,18 @@ function Ficha() {
     setSaving(true); setStatus("salvando");
     try {
       // Update by id only: never creates a new record.
+      const legacy = e.orc.find((o) => o.id === null);
       const { error } = await supabase.from("empreendimentos").update({
-        ...e.g, prazo: e.g.prazo || null, cliente: e.c, dados: e.d, custos: e.k, updated_at: new Date().toISOString(),
+        ...e.g, prazo: e.g.prazo || null, cliente: e.c, dados: e.d,
+        ...(legacy ? { custos: legacy.custos } : {}),
+        updated_at: new Date().toISOString(),
       } as never).eq("id", id);
       if (error) { setStatus("erro"); clearTimeout(timer.current); timer.current = setTimeout(() => { void salvarRef.current(); }, 8000); if (manual) toast.error(`Erro ao salvar a ficha: ${error.message}`); return false; }
+      for (const o of e.orc) {
+        if (!o.id) continue;
+        const { error: eo } = await supabase.from("orcamentos").update({ titulo: o.titulo, custos: o.custos, updated_at: new Date().toISOString() } as never).eq("id", o.id);
+        if (eo) { setStatus("erro"); clearTimeout(timer.current); timer.current = setTimeout(() => { void salvarRef.current(); }, 8000); if (manual) toast.error(`Erro ao salvar "${rotuloOrc(e.orc.indexOf(o))}": ${eo.message}`); return false; }
+      }
       ultimoSalvo.current = snap;
       const atual = estadoRef.current ? JSON.stringify(estadoRef.current) : snap;
       if (atual === snap) { apagarRascunho(chave); setStatus("salvo"); }
@@ -191,6 +209,7 @@ function Ficha() {
       if (manual) toast.success("Ficha salva.");
       qc.invalidateQueries({ queryKey: ["empreendimentos"] });
       qc.invalidateQueries({ queryKey: ["empreendimento", id] });
+      qc.invalidateQueries({ queryKey: ["orcamentos", id] });
       qc.invalidateQueries({ queryKey: ["obras-publicas"] });
       return true;
     } catch (err) {
@@ -203,6 +222,39 @@ function Ficha() {
   }
 
   salvarRef.current = salvar;
+
+  async function novoOrcamento() {
+    // A legacy single budget becomes a real row first, so nothing is lost.
+    const convertidos = [...orc];
+    for (let i = 0; i < convertidos.length; i++) {
+      if (convertidos[i].id !== null) continue;
+      const { data: row, error } = await supabase.from("orcamentos").insert({ empreendimento_id: id, titulo: `Orçamento ${i + 1}`, custos: convertidos[i].custos } as never).select("id").single();
+      if (error) { toast.error(`Não foi possível criar o orçamento: ${error.message}`); return; }
+      convertidos[i] = { ...convertidos[i], id: row.id };
+    }
+    const titulo = `Orçamento ${convertidos.length + 1}`;
+    const { data: row, error } = await supabase.from("orcamentos").insert({ empreendimento_id: id, titulo, custos: custosVazios } as never).select("id").single();
+    if (error) { toast.error(`Não foi possível criar o orçamento: ${error.message}`); return; }
+    setOrc([...convertidos, { id: row.id, titulo, custos: custosVazios }]);
+    setSel(convertidos.length);
+    qc.invalidateQueries({ queryKey: ["orcamentos", id] });
+    toast.success("Novo orçamento criado.");
+  }
+
+  async function excluirOrcamento(i: number) {
+    const o = orc[i];
+    if (!o) return;
+    if (orc.length <= 1) { toast.error("A ficha precisa de pelo menos um orçamento."); return; }
+    if (!confirm(`Excluir "${rotuloOrc(i)}" com todos os serviços e valores dele? Essa ação não pode ser desfeita.`)) return;
+    if (o.id) {
+      const { error } = await supabase.from("orcamentos").delete().eq("id", o.id);
+      if (error) { toast.error(`Não foi possível excluir: ${error.message}`); return; }
+    }
+    setOrc(orc.filter((_, x) => x !== i));
+    setSel((s) => Math.max(0, s - (i <= s ? 1 : 0)));
+    qc.invalidateQueries({ queryKey: ["orcamentos", id] });
+    toast.success("Orçamento excluído.");
+  }
 
   async function excluir() {
     if (!confirm("Excluir este empreendimento e todas as fotos dele? Essa ação não pode ser desfeita.")) return;
@@ -304,7 +356,7 @@ function Ficha() {
           <button onClick={excluir} className="inline-flex items-center gap-2 rounded-md border border-border px-3 py-2 text-sm text-destructive hover:border-destructive"><Trash2 className="h-4 w-4" aria-hidden />Excluir</button>
           <span role="status" aria-live="polite" className={`self-center text-xs font-semibold ${status === "erro" ? "text-destructive" : status === "offline" ? "text-primary" : "text-muted-foreground"}`}>{{ salvo: "Salvo", pendente: "Alterações pendentes…", salvando: "Salvando…", erro: "Erro ao salvar — tentaremos de novo", offline: "Sem internet — guardado neste aparelho" }[status]}</span>
           <button onClick={() => salvar(true)} disabled={saving || enviando} className="inline-flex items-center gap-2 rounded-md bg-secondary px-4 py-2 text-sm font-bold hover:brightness-125"><Save className="h-4 w-4" aria-hidden />{saving ? "Salvando…" : "Salvar"}</button>
-          <button onClick={async () => { if (await salvar(true)) navigate({ to: "/admin/$id/orcamento", params: { id } }); }} className="inline-flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-bold text-primary-foreground hover:brightness-110"><FileText className="h-4 w-4" aria-hidden />Gerar Orçamento</button>
+          <button onClick={async () => { if (await salvar(true)) navigate({ to: "/admin/$id/orcamento", params: { id }, search: orc[sel]?.id ? { orc: orc[sel].id! } : {} }); }} className="inline-flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-bold text-primary-foreground hover:brightness-110"><FileText className="h-4 w-4" aria-hidden />Gerar Orçamento</button>
         </div>
       </div>
 
@@ -356,7 +408,21 @@ function Ficha() {
             </div>
           </Sec>
 
-          <Sec n={3} title="Levantamento de serviços (mão de obra)">
+          <Sec n={3} title="Orçamentos">
+            <p className="mb-4 text-sm text-muted-foreground">Cada orçamento tem seus próprios serviços, materiais, equipamentos, custos e PDF. As seções 4 a 8 abaixo editam o orçamento selecionado aqui.</p>
+            <div className="flex flex-wrap gap-2" role="tablist" aria-label="Orçamentos do empreendimento">
+              {orc.map((o, i) => (
+                <button key={o.id ?? "legado"} role="tab" aria-selected={i === sel} onClick={() => setSel(i)} className={`rounded-md px-3 py-2 text-sm font-bold ${i === sel ? "bg-primary text-primary-foreground" : "border border-border hover:border-primary"}`}>{rotuloOrc(i)}</button>
+              ))}
+              <button onClick={novoOrcamento} className="inline-flex items-center gap-1 rounded-md border border-dashed border-primary/50 px-3 py-2 text-sm text-primary hover:border-primary"><Plus className="h-4 w-4" aria-hidden />Novo orçamento</button>
+            </div>
+            <div className="mt-4 grid gap-4 md:grid-cols-[1fr_auto] md:items-end">
+              <F label="Nome deste orçamento (aparece no PDF)"><input className={inp} value={orc[sel]?.titulo ?? ""} onChange={(e) => setOrc(orc.map((o, i) => (i === sel ? { ...o, titulo: e.target.value } : o)))} /></F>
+              <button onClick={() => excluirOrcamento(sel)} disabled={orc.length <= 1} className="inline-flex items-center gap-2 rounded-md border border-border px-3 py-2 text-sm text-destructive hover:border-destructive disabled:opacity-40"><Trash2 className="h-4 w-4" aria-hidden />Excluir este orçamento</button>
+            </div>
+          </Sec>
+
+          <Sec n={4} title="Levantamento de serviços (mão de obra)">
             <Linhas
               cols={["Serviço", "Un.", "Qtd.", "M.O. / un. (R$)"]}
               rows={k.itens}
@@ -372,7 +438,17 @@ function Ficha() {
             />
           </Sec>
 
-          <Sec n={4} title="Materiais">
+          <Sec n={5} title="Materiais">
+            {produtos.length > 0 && (
+              <select className={`${inp} mb-3`} value="" aria-label="Adicionar produto do catálogo" onChange={(e) => {
+                const p = produtos.find((x) => x.id === e.target.value);
+                if (p) setK({ ...k, materiais: [...k.materiais, { id: uid(), descricao: p.nome, unidade: p.unidade, quantidade: p.quantidade || 1, precoUnit: p.preco }] });
+              }}>
+                <option value="">Adicionar do catálogo de produtos…</option>
+                {produtos.map((p) => <option key={p.id} value={p.id}>{p.nome} — {brl(p.preco)} / {p.unidade}</option>)}
+              </select>
+            )}
+            <p className="mb-3 text-xs text-muted-foreground">Cadastre e atualize preços em <Link to="/admin/produtos" className="text-primary underline">Produtos e preços</Link>. Ao escolher um produto, quantidade e preço entram preenchidos e podem ser ajustados só neste orçamento.</p>
             <Linhas
               cols={["Material", "Un.", "Qtd.", "Preço / un. (R$)"]}
               rows={k.materiais}
@@ -388,7 +464,7 @@ function Ficha() {
             />
           </Sec>
 
-          <Sec n={5} title="Equipamentos">
+          <Sec n={6} title="Equipamentos">
             <Linhas
               cols={["Equipamento", "Dias", "Valor / dia (R$)"]}
               rows={k.equipamentos}
@@ -403,7 +479,7 @@ function Ficha() {
             />
           </Sec>
 
-          <Sec n={6} title="Outros custos">
+          <Sec n={7} title="Outros custos">
             <div className="grid gap-4 md:grid-cols-3">
               {([["transporte", "Transporte"], ["alimentacao", "Alimentação"], ["descarte", "Descarte / caçamba"], ["art", "ART / taxas"], ["diversos", "Diversos"]] as const).map(([key, label]) => (
                 <F key={key} label={`${label} (R$)`}><input className={inp} inputMode="decimal" value={k.outros[key] || ""} onChange={(e) => setK({ ...k, outros: { ...k.outros, [key]: num(e.target.value) } })} /></F>
@@ -411,7 +487,7 @@ function Ficha() {
             </div>
           </Sec>
 
-          <Sec n={7} title="Prazos e condições">
+          <Sec n={8} title="Prazos e condições">
             <div className="grid gap-4 md:grid-cols-3">
               <F label="Prazo de execução (dias)"><input className={inp} inputMode="numeric" value={k.prazoDias || ""} onChange={(e) => setK({ ...k, prazoDias: num(e.target.value) })} /></F>
               <F label="Data de entrega"><input type="date" className={inp} value={g.prazo} onChange={(e) => setGe({ prazo: e.target.value })} /></F>
@@ -422,7 +498,7 @@ function Ficha() {
             </div>
           </Sec>
 
-          <Sec n={8} title="Card no site público">
+          <Sec n={9} title="Card no site público">
             <div className="grid gap-4 md:grid-cols-2">
               <F label="Status"><select className={inp} value={g.status} onChange={(e) => setGe({ status: e.target.value })}>{STATUS.map((x) => <option key={x}>{x}</option>)}</select></F>
               <F label="Etapa atual (texto do card)"><input className={inp} placeholder="Ex.: Etapa atual: preparação" value={g.etapa} onChange={(e) => setGe({ etapa: e.target.value })} /></F>
@@ -461,7 +537,7 @@ function Ficha() {
             </div>
           </Sec>
 
-          <Sec n={9} title="Área do cliente (protegida por senha)">
+          <Sec n={10} title="Área do cliente (protegida por senha)">
             <p className="mb-4 text-sm text-muted-foreground">O cliente abre esta área pelo card no site e digita a senha do empreendimento. Cada unidade tem a própria senha: a senha do empreendimento não abre as unidades. As senhas são guardadas de forma criptografada e não podem ser lidas, só trocadas.</p>
             <div className="grid gap-4">
               <SenhaAdmin rpc="definir_senha_obra" id={id} temSenha={!!data.senha_hash} label="Senha do empreendimento" />
@@ -476,6 +552,7 @@ function Ficha() {
         <aside className="lg:sticky lg:top-6 lg:self-start">
           <div className="rounded-xl border border-primary/40 bg-card p-5">
             <h2 className="font-display text-lg font-bold">Cálculo de custos</h2>
+            <p className="text-xs text-muted-foreground">{rotuloOrc(sel)}</p>
             <dl className="mt-4 space-y-2 text-sm">
               <Row k="Mão de obra" v={brl(t.maoObra)} />
               <Row k="Materiais" v={brl(t.materiais)} />
