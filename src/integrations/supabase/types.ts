@@ -77,6 +77,41 @@ export type Database = {
         }
         Relationships: []
       }
+      orcamentos: {
+        Row: {
+          created_at: string
+          custos: Json
+          empreendimento_id: string
+          id: string
+          titulo: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          custos?: Json
+          empreendimento_id: string
+          id?: string
+          titulo?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          custos?: Json
+          empreendimento_id?: string
+          id?: string
+          titulo?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "orcamentos_empreendimento_id_fkey"
+            columns: ["empreendimento_id"]
+            isOneToOne: false
+            referencedRelation: "empreendimentos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       portal_tentativas: {
         Row: {
           chave: string
