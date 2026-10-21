@@ -64,11 +64,32 @@ function Ficha() {
     // Never refetch on focus: returning from another app must not reset the form.
     refetchOnWindowFocus: false,
   });
+  const { data: orcsDb } = useQuery({
+    queryKey: ["orcamentos", id],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("orcamentos").select("*").eq("empreendimento_id", id).order("created_at");
+      if (error) throw error;
+      return data;
+    },
+    refetchOnWindowFocus: false,
+  });
+  const { data: produtos = [] } = useQuery({
+    queryKey: ["produtos"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("produtos").select("*").order("nome");
+      if (error) throw error;
+      return data as Produto[];
+    },
+  });
 
   const [g, setG] = useState<Geral | null>(null);
   const [c, setC] = useState<Cliente>(clienteVazio);
   const [d, setD] = useState<Dados>(dadosVazios);
-  const [k, setK] = useState<Custos>(custosVazios);
+  // Multiple independent budgets per enterprise; id null = legacy single budget in empreendimentos.custos.
+  const [orc, setOrc] = useState<Orc[]>([]);
+  const [sel, setSel] = useState(0);
+  const k = orc[sel]?.custos ?? custosVazios;
+  const setK = (nk: Custos) => setOrc((prev) => prev.map((o, i) => (i === sel ? { ...o, custos: nk } : o)));
   const [urls, setUrls] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
   const [enviando, setEnviando] = useState(false);
