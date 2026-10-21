@@ -227,10 +227,11 @@ function Ficha() {
     // A legacy single budget becomes a real row first, so nothing is lost.
     const convertidos = [...orc];
     for (let i = 0; i < convertidos.length; i++) {
-      if (convertidos[i].id !== null) continue;
-      const { data: row, error } = await supabase.from("orcamentos").insert({ empreendimento_id: id, titulo: `Orçamento ${i + 1}`, custos: convertidos[i].custos } as never).select("id").single();
+      const atual = convertidos[i]!;
+      if (atual.id !== null) continue;
+      const { data: row, error } = await supabase.from("orcamentos").insert({ empreendimento_id: id, titulo: `Orçamento ${i + 1}`, custos: atual.custos } as never).select("id").single();
       if (error) { toast.error(`Não foi possível criar o orçamento: ${error.message}`); return; }
-      convertidos[i] = { ...convertidos[i], id: row.id };
+      convertidos[i] = { ...atual, id: row.id };
     }
     const titulo = `Orçamento ${convertidos.length + 1}`;
     const { data: row, error } = await supabase.from("orcamentos").insert({ empreendimento_id: id, titulo, custos: custosVazios } as never).select("id").single();
