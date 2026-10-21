@@ -15,4 +15,6 @@
 - [x] PDF: centavos das linhas batem com o total
 - [x] Área do cliente por obra e unidade com senhas seguras no servidor
 - [x] Ficha: salvamento automático com rascunho local e indicador de status
+- [ ] Múltiplos orçamentos por empreendimento (banco pronto; Montserrat já tem 2) — falta tela da ficha e PDF por orçamento
+- [ ] Catálogo de produtos com preço para puxar materiais no orçamento
 - [ ] Google Search Console: publicar e concluir verificação + sitemap (aguarda aprovação de publicação)
