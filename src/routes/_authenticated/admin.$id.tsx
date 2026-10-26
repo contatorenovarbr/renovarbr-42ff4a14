@@ -358,6 +358,7 @@ function Ficha() {
           <span role="status" aria-live="polite" className={`self-center text-xs font-semibold ${status === "erro" ? "text-destructive" : status === "offline" ? "text-primary" : "text-muted-foreground"}`}>{{ salvo: "Salvo", pendente: "Alterações pendentes…", salvando: "Salvando…", erro: "Erro ao salvar — tentaremos de novo", offline: "Sem internet — guardado neste aparelho" }[status]}</span>
           <button onClick={() => salvar(true)} disabled={saving || enviando} className="inline-flex items-center gap-2 rounded-md bg-secondary px-4 py-2 text-sm font-bold hover:brightness-125"><Save className="h-4 w-4" aria-hidden />{saving ? "Salvando…" : "Salvar"}</button>
           <button onClick={async () => { if (await salvar(true)) navigate({ to: "/admin/$id/orcamento", params: { id }, search: orc[sel]?.id ? { orc: orc[sel].id! } : {} }); }} className="inline-flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-bold text-primary-foreground hover:brightness-110"><FileText className="h-4 w-4" aria-hidden />Gerar Orçamento</button>
+          <button onClick={async () => { if (await salvar(true)) navigate({ to: "/admin/$id/contrato", params: { id }, search: orc[sel]?.id ? { orc: orc[sel].id! } : {} }); }} className="inline-flex items-center gap-2 rounded-md border border-primary px-4 py-2 text-sm font-bold hover:bg-primary/10"><FileText className="h-4 w-4" aria-hidden />Gerar Contrato</button>
         </div>
       </div>
 
