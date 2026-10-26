@@ -16,6 +16,7 @@ import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/
 import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authenticated/admin.index'
 import { Route as AuthenticatedAdminIdRouteImport } from './routes/_authenticated/admin.$id'
 import { Route as AuthenticatedAdminProdutosRouteImport } from './routes/_authenticated/admin.produtos'
+import { Route as AuthenticatedAdminIdContratoRouteImport } from './routes/_authenticated/admin.$id_.contrato'
 import { Route as AuthenticatedAdminIdOrcamentoRouteImport } from './routes/_authenticated/admin.$id_.orcamento'
 
 const IndexRoute = IndexRouteImport.update({
@@ -53,6 +54,12 @@ const AuthenticatedAdminProdutosRoute =
     path: '/produtos',
     getParentRoute: () => AuthenticatedAdminRoute,
   } as any)
+const AuthenticatedAdminIdContratoRoute =
+  AuthenticatedAdminIdContratoRouteImport.update({
+    id: '/$id_/contrato',
+    path: '/$id/contrato',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
 const AuthenticatedAdminIdOrcamentoRoute =
   AuthenticatedAdminIdOrcamentoRouteImport.update({
     id: '/$id_/orcamento',
@@ -67,6 +74,7 @@ export interface FileRoutesByFullPath {
   '/admin/$id': typeof AuthenticatedAdminIdRoute
   '/admin/produtos': typeof AuthenticatedAdminProdutosRoute
   '/admin/': typeof AuthenticatedAdminIndexRoute
+  '/admin/$id/contrato': typeof AuthenticatedAdminIdContratoRoute
   '/admin/$id/orcamento': typeof AuthenticatedAdminIdOrcamentoRoute
 }
 export interface FileRoutesByTo {
@@ -75,6 +83,7 @@ export interface FileRoutesByTo {
   '/admin/$id': typeof AuthenticatedAdminIdRoute
   '/admin/produtos': typeof AuthenticatedAdminProdutosRoute
   '/admin': typeof AuthenticatedAdminIndexRoute
+  '/admin/$id/contrato': typeof AuthenticatedAdminIdContratoRoute
   '/admin/$id/orcamento': typeof AuthenticatedAdminIdOrcamentoRoute
 }
 export interface FileRoutesById {
@@ -86,6 +95,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/$id': typeof AuthenticatedAdminIdRoute
   '/_authenticated/admin/produtos': typeof AuthenticatedAdminProdutosRoute
   '/_authenticated/admin/': typeof AuthenticatedAdminIndexRoute
+  '/_authenticated/admin/$id_/contrato': typeof AuthenticatedAdminIdContratoRoute
   '/_authenticated/admin/$id_/orcamento': typeof AuthenticatedAdminIdOrcamentoRoute
 }
 export interface FileRouteTypes {
@@ -97,6 +107,7 @@ export interface FileRouteTypes {
     | '/admin/$id'
     | '/admin/produtos'
     | '/admin/'
+    | '/admin/$id/contrato'
     | '/admin/$id/orcamento'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -105,6 +116,7 @@ export interface FileRouteTypes {
     | '/admin/$id'
     | '/admin/produtos'
     | '/admin'
+    | '/admin/$id/contrato'
     | '/admin/$id/orcamento'
   id:
     | '__root__'
@@ -115,6 +127,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/$id'
     | '/_authenticated/admin/produtos'
     | '/_authenticated/admin/'
+    | '/_authenticated/admin/$id_/contrato'
     | '/_authenticated/admin/$id_/orcamento'
   fileRoutesById: FileRoutesById
 }
@@ -175,6 +188,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminProdutosRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
+    '/_authenticated/admin/$id_/contrato': {
+      id: '/_authenticated/admin/$id_/contrato'
+      path: '/$id/contrato'
+      fullPath: '/admin/$id/contrato'
+      preLoaderRoute: typeof AuthenticatedAdminIdContratoRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
     '/_authenticated/admin/$id_/orcamento': {
       id: '/_authenticated/admin/$id_/orcamento'
       path: '/$id/orcamento'
@@ -189,6 +209,7 @@ interface AuthenticatedAdminRouteChildren {
   AuthenticatedAdminIdRoute: typeof AuthenticatedAdminIdRoute
   AuthenticatedAdminProdutosRoute: typeof AuthenticatedAdminProdutosRoute
   AuthenticatedAdminIndexRoute: typeof AuthenticatedAdminIndexRoute
+  AuthenticatedAdminIdContratoRoute: typeof AuthenticatedAdminIdContratoRoute
   AuthenticatedAdminIdOrcamentoRoute: typeof AuthenticatedAdminIdOrcamentoRoute
 }
 
@@ -196,6 +217,7 @@ const AuthenticatedAdminRouteChildren: AuthenticatedAdminRouteChildren = {
   AuthenticatedAdminIdRoute: AuthenticatedAdminIdRoute,
   AuthenticatedAdminProdutosRoute: AuthenticatedAdminProdutosRoute,
   AuthenticatedAdminIndexRoute: AuthenticatedAdminIndexRoute,
+  AuthenticatedAdminIdContratoRoute: AuthenticatedAdminIdContratoRoute,
   AuthenticatedAdminIdOrcamentoRoute: AuthenticatedAdminIdOrcamentoRoute,
 }
 
