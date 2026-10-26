@@ -7,7 +7,7 @@ import logo from "@/assets/renovar-logo.png.asset.json";
 import { brl, calcular, clienteVazio, custosVazios, dadosVazios, type Cliente, type Custos, type Dados } from "@/lib/orcamento";
 
 export const Route = createFileRoute("/_authenticated/admin/$id_/contrato")({
-  validateSearch: (s: Record<string, unknown>): { orc?: string } => (typeof s.orc === "string" ? { orc: s.orc } : {}),
+  validateSearch: (s: Record<string, unknown>): { orc?: string } => (typeof s["orc"] === "string" ? { orc: s["orc"] } : {}),
   head: () => ({
     meta: [
       { title: "Minuta de contrato — Renovar BR" },
