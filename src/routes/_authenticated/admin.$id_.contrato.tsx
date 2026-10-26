@@ -82,36 +82,44 @@ function Contrato() {
         <h1 className="text-center text-lg font-bold uppercase">Contrato de prestação de serviços</h1>
         {data.orcTitulo && <p className="text-center text-muted-foreground">Referente ao orçamento: {data.orcTitulo}</p>}
 
-        <h2 className="font-bold">1. Partes</h2>
-        <p><b>CONTRATADA:</b> Renovar BR, razão social <Campo ph="razão social" />, CNPJ/CPF <Campo ph="CNPJ/CPF" w="w-44" />, endereço <Campo ph="endereço" w="w-72" />, representante <Campo ph="nome do representante" />.</p>
-        <p><b>CONTRATANTE:</b> {c.nome || <Campo ph="nome" />}, {c.documento ? `documento ${c.documento}` : <>documento <Campo ph="CPF/CNPJ" w="w-44" /></>}, endereço {c.endereco || <Campo ph="endereço" w="w-72" />}{c.telefone && `, telefone ${c.telefone}`}{c.email && `, e-mail ${c.email}`}.</p>
-
-        <h2 className="font-bold">2. Objeto e local</h2>
+        <h2 className="font-bold">Artigo 1º — Objeto e local</h2>
         <p>Execução de serviços de {modo === "mo" ? "mão de obra (materiais fornecidos pela CONTRATANTE)" : "mão de obra com fornecimento de materiais"} no empreendimento <b>{data.titulo}</b>, situado em {endereco || <Campo ph="endereço da obra" w="w-72" />}.</p>
 
-        <h2 className="font-bold">3. Escopo</h2>
+        <h2 className="font-bold">Artigo 2º — Identificação das partes</h2>
+        <p><b>CONTRATADA:</b> Renovar BR, razão social <Campo ph="razão social" />, CNPJ <Campo ph="CNPJ" w="w-44" />, endereço <Campo ph="endereço" w="w-72" />, e-mail de contato <Campo ph="e-mail" w="w-56" />, neste ato representada por seu responsável legal <Campo ph="nome completo" />, CPF <Campo ph="CPF" w="w-36" />, <Campo ph="nacionalidade, estado civil, profissão" w="w-72" />.</p>
+        <p><b>CONTRATANTE:</b> {c.nome || <Campo ph="nome / razão social" />}, {c.documento ? `documento ${c.documento}` : <>CPF/CNPJ <Campo ph="CPF/CNPJ" w="w-44" /></>}, endereço {c.endereco || <Campo ph="endereço" w="w-72" />}{c.telefone && `, telefone ${c.telefone}`}, e-mail de contato {c.email || <Campo ph="e-mail" w="w-56" />}. Se pessoa jurídica, representada por seu responsável legal {c.contato ? <>{c.contato}</> : <Campo ph="nome completo" />}, CPF <Campo ph="CPF" w="w-36" />, <Campo ph="nacionalidade, estado civil, profissão" w="w-72" />.</p>
+
+        <h2 className="font-bold">Artigo 3º — Escopo e materiais</h2>
         <ol className="list-decimal space-y-1 pl-6">{k.itens.map((i) => <li key={i.id}>{i.descricao}{i.quantidade ? ` — ${i.quantidade} ${i.unidade}` : ""}</li>)}</ol>
-        {modo === "momat" && k.materiais.length > 0 && <p>Materiais incluídos: {k.materiais.map((m) => m.descricao).filter(Boolean).join("; ")}.</p>}
+        <p>Materiais previstos {modo === "mo" ? "(fornecidos pela CONTRATANTE)" : "(fornecidos pela CONTRATADA)"}:</p>
+        <ol className="list-decimal space-y-1 pl-6">
+          {[...base.materiais.map((m) => ({ id: m.id, d: m.descricao })), ...[1, 2, 3].map((n) => ({ id: `extra${n}`, d: "" }))].map((m) => (
+            <li key={m.id}><input defaultValue={m.d} placeholder="material" className="w-56 max-w-full border-b border-dashed border-muted-foreground bg-transparent px-1 outline-none print:border-solid" /> — marca/linha: <Campo ph="marca / linha" w="w-48" /></li>
+          ))}
+        </ol>
+        <p>Tinta: marca <Campo ph="marca" w="w-36" />, linha <Campo ph="linha" w="w-36" />, tipo <Campo ph="tipo" w="w-36" />, acabamento <Campo ph="acabamento" w="w-36" />.</p>
 
-        <h2 className="font-bold">4. Preço</h2>
+        <h2 className="font-bold">Artigo 4º — Do preço e do pagamento</h2>
         <p>Valor total: <b>{brl(t.precoFinal)}</b>{k.descontoValor ? ` (já com desconto de ${brl(k.descontoValor)})` : ""}.</p>
+        <p>Cronograma de pagamento: {k.pagamento || <Campo ph="forma, parcelas e etapas de pagamento" w="w-full" />}</p>
 
-        <h2 className="font-bold">5. Pagamento</h2>
-        <p>{k.pagamento || <Campo ph="forma e condições de pagamento" w="w-full" />}</p>
+        <h2 className="font-bold">Artigo 5º — Dos prazos</h2>
+        <p>Prazo de execução: {k.prazoDias ? `${k.prazoDias} dias` : <Campo ph="prazo" w="w-32" />}, com início em {d.inicioPrevisto ? new Date(d.inicioPrevisto + "T12:00:00").toLocaleDateString("pt-BR") : <Campo ph="data de início" w="w-36" />}, devendo as etapas de execução acompanhar o cronograma de pagamento do Artigo 4º, podendo ser prorrogado por chuvas, falta de acesso ou alterações de escopo solicitadas.</p>
+        <p><b>Parágrafo único.</b> No caso de atraso ou paralisação, também fica suspenso o pagamento até a devida consecução do estabelecido no cronograma do Artigo 4º (Do Pagamento).</p>
 
-        <h2 className="font-bold">6. Prazo</h2>
-        <p>Prazo de execução: {k.prazoDias ? `${k.prazoDias} dias` : <Campo ph="prazo" w="w-32" />}, com início em {d.inicioPrevisto ? new Date(d.inicioPrevisto + "T12:00:00").toLocaleDateString("pt-BR") : <Campo ph="data de início" w="w-36" />}, podendo ser prorrogado por chuvas, falta de acesso ou alterações de escopo solicitadas.</p>
-
-        <h2 className="font-bold">7. Responsabilidades</h2>
+        <h2 className="font-bold">Artigo 6º — Responsabilidades</h2>
         <p>A CONTRATADA executará os serviços com técnica adequada, mantendo o local organizado e sua equipe com equipamentos de segurança. A CONTRATANTE garantirá acesso ao local, pontos de água e energia{modo === "mo" ? ", e fornecerá os materiais em tempo hábil" : ""}. Serviços fora do escopo serão orçados à parte.</p>
 
-        <h2 className="font-bold">8. Garantia</h2>
+        <h2 className="font-bold">Artigo 7º — Seguro de vida</h2>
+        <p>A CONTRATADA manterá seguro de vida para todos os trabalhadores que atuarão na obra, seguradora <Campo ph="seguradora" w="w-48" />, apólice <Campo ph="nº da apólice" w="w-40" />, cobertura <Campo ph="cobertura" w="w-48" />, e apresentará o comprovante à CONTRATANTE antes do início dos serviços, inclusive para trabalhadores incluídos posteriormente.</p>
+
+        <h2 className="font-bold">Artigo 8º — Garantia</h2>
         <p>{k.garantia || <Campo ph="garantia dos serviços" w="w-full" />}</p>
 
-        <h2 className="font-bold">9. Rescisão</h2>
+        <h2 className="font-bold">Artigo 9º — Rescisão</h2>
         <p>O contrato poderá ser rescindido por qualquer parte mediante aviso por escrito com <Campo ph="nº" w="w-12" /> dias de antecedência, pagando-se os serviços já executados. O descumprimento de cláusula permite rescisão imediata. Multa: <Campo ph="condição de multa" w="w-56" />.</p>
 
-        <h2 className="font-bold">10. Foro</h2>
+        <h2 className="font-bold">Artigo 10º — Foro</h2>
         <p>Fica eleito o foro da comarca de <Campo ph="comarca" w="w-40" />/SC.</p>
 
         <p className="pt-4">Local e data: <Campo ph="local" w="w-40" />, ____/____/________</p>
