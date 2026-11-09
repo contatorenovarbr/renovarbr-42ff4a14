@@ -1,5 +1,3 @@
-import logo from "@/assets/renovar-logo.png.asset.json";
-
 type Props = { className?: string; showTagline?: boolean };
 
 export function Logo({ className = "" }: Props) {
