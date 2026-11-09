@@ -18,3 +18,4 @@
 - [ ] Múltiplos orçamentos por empreendimento (banco pronto; Montserrat já tem 2) — falta tela da ficha e PDF por orçamento
 - [ ] Catálogo de produtos com preço para puxar materiais no orçamento
 - [ ] Google Search Console: publicar e concluir verificação + sitemap (aguarda aprovação de publicação)
+- [x] Entregar SQL MySQL (esquema + dados) e modelo .env para Hostinger
